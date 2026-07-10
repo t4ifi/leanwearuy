@@ -5,6 +5,7 @@
  * Un pedido puede incluir items que NO están en el catálogo: igual pesan,
  * así que absorben su parte del envío.
  */
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
@@ -265,7 +266,12 @@ export default async function PedidoPage({
                                   current={venta}
                                 />
                               ) : (
-                                <span className="text-xs text-faint">creá el producto</span>
+                                <Link
+                                  href={`/admin/importaciones/${order.id}/item/${it.id}/crear-producto`}
+                                  className="rounded-md border border-purple/40 bg-purple/10 px-2 py-1 text-xs text-purple-2 transition hover:bg-purple/20"
+                                >
+                                  Crear producto
+                                </Link>
                               )}
                             </span>
                           </>

@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guard";
 import { recalcImportOrder } from "@/lib/imports";
 import { FUERA_DE_CATALOGO } from "@/lib/import-constants";
+import { uniqueSlug } from "@/lib/slug";
 
 export type ActionState = { error?: string };
 
@@ -194,4 +195,71 @@ export async function removeImportItem(itemId: string) {
   await recalcImportOrder(item.importOrderId);
   revalidatePath(`/admin/importaciones/${item.importOrderId}`);
   return { ok: true };
+}
+
+/**
+ * Crea un producto del catálogo a partir de un item que estaba "fuera del
+ * catálogo", y vincula el item al producto nuevo. Así el producto hereda
+ * el costo real de este pedido y se le puede aplicar el precio ideal.
+ */
+const fromItemSchema = z.object({
+  brandId: z.string().min(1, "Elegí una marca"),
+  categoryId: z.string().min(1, "Elegí una categoría"),
+  section: z.enum(["STOCK", "ENCARGUE"]),
+  name: z.string().trim().min(2, "El nombre es obligatorio").max(120),
+  salePriceUyu: num(),
+});
+
+export async function createProductFromItem(
+  itemId: string,
+  _p: ActionState,
+  fd: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+
+  const item = await prisma.importItem.findUnique({ where: { id: itemId } });
+  if (!item) return { error: "El item ya no existe." };
+  if (item.productId) return { error: "Este item ya está vinculado a un producto." };
+
+  const parsed = fromItemSchema.safeParse({
+    brandId: (fd.get("brandId") ?? "").toString(),
+    categoryId: (fd.get("categoryId") ?? "").toString(),
+    section: (fd.get("section") ?? "ENCARGUE").toString(),
+    name: (fd.get("name") ?? "").toString(),
+    salePriceUyu: (fd.get("salePriceUyu") ?? "").toString(),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+
+  const d = parsed.data;
+  const brand = await prisma.brand.findUnique({ where: { id: d.brandId } });
+  if (!brand) return { error: "La marca elegida no existe." };
+
+  const slug = await uniqueSlug(`${brand.name} ${d.name}`, async (sg) =>
+    Boolean(await prisma.product.findUnique({ where: { slug: sg }, select: { id: true } })),
+  );
+
+  // El producto arranca como BORRADOR: no aparece en la web hasta que lo
+  // revises y le pongas fotos.
+  const product = await prisma.product.create({
+    data: {
+      slug,
+      name: d.name,
+      brandId: d.brandId,
+      categoryId: d.categoryId,
+      section: d.section,
+      status: "DRAFT",
+      salePriceUyu: d.salePriceUyu > 0 ? d.salePriceUyu : null,
+      purchaseCostUsd: Number(item.unitCostUsd),
+      weightGrams: item.unitWeightGrams,
+    },
+  });
+
+  // Vincular el item: deja de ser "fuera del catálogo".
+  await prisma.importItem.update({
+    where: { id: itemId },
+    data: { productId: product.id, name: null },
+  });
+
+  revalidatePath(`/admin/importaciones/${item.importOrderId}`);
+  redirect(`/admin/productos/${product.id}/editar`);
 }
