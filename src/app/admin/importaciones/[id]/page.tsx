@@ -168,121 +168,127 @@ export default async function PedidoPage({
               </span>
             </form>
 
-            <div className="-mx-2 overflow-x-auto">
-              <table className="w-full min-w-5xl border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-line text-left text-xs font-medium uppercase tracking-wider text-faint">
-                    <th className="p-2">Producto</th>
-                    <th className="p-2 text-right">Cant.</th>
-                    <th className="p-2 text-right">Peso</th>
-                    <th className="p-2 text-right">Costo real c/u</th>
-                    <th className="p-2 text-right">Venta actual</th>
-                    <th className="p-2 text-right">Ganancia</th>
-                    <th className="p-2 text-right">Precio ideal</th>
-                    <th className="p-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items.map((it) => {
-                    const nombre = it.product?.name ?? it.name ?? "(sin nombre)";
-                    const lineWeight = it.unitWeightGrams * it.quantity;
-                    const share = pesoTotal > 0 ? (lineWeight / pesoTotal) * 100 : 0;
-                    const real = it.realCostUsd ? Number(it.realCostUsd) : null;
-                    const venta = it.product?.salePriceUyu ? Number(it.product.salePriceUyu) : null;
-                    const prof = lineProfit({ realCostUsd: real, salePriceUyu: venta, exchangeRate: rate });
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-line text-left text-xs font-medium uppercase tracking-wider text-faint">
+                  <th className="py-2 pr-3">Producto</th>
+                  <th className="px-3 py-2 text-right">Peso</th>
+                  <th className="px-3 py-2 text-right">Costo real c/u</th>
+                  <th className="px-3 py-2 text-right">Venta</th>
+                  <th className="px-3 py-2 text-right">Ganancia</th>
+                  <th className="px-3 py-2 text-right">Precio ideal</th>
+                  <th className="py-2 pl-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items.map((it) => {
+                  const nombre = it.product?.name ?? it.name ?? "(sin nombre)";
+                  const lineWeight = it.unitWeightGrams * it.quantity;
+                  const share = pesoTotal > 0 ? (lineWeight / pesoTotal) * 100 : 0;
+                  const real = it.realCostUsd ? Number(it.realCostUsd) : null;
+                  const venta = it.product?.salePriceUyu ? Number(it.product.salePriceUyu) : null;
+                  const prof = lineProfit({ realCostUsd: real, salePriceUyu: venta, exchangeRate: rate });
 
-                    const ideal =
-                      real != null
-                        ? roundPriceUyu(
-                            suggestSalePriceUyu({
-                              realCostUsd: real,
-                              exchangeRate: rate,
-                              targetMarginPct: margenObjetivo,
-                            }),
-                          )
-                        : null;
+                  // El precio ideal se calcula SIEMPRE que haya costo real,
+                  // esté o no el producto en el catálogo.
+                  const ideal =
+                    real != null
+                      ? roundPriceUyu(
+                          suggestSalePriceUyu({
+                            realCostUsd: real,
+                            exchangeRate: rate,
+                            targetMarginPct: margenObjetivo,
+                          }),
+                        )
+                      : null;
 
-                    const envio = Number(it.allocatedShippingUsd ?? 0);
-                    const imp = Number(it.allocatedTaxesUsd ?? 0) + Number(it.allocatedOtherUsd ?? 0);
+                  const envio = Number(it.allocatedShippingUsd ?? 0);
+                  const aduana = Number(it.allocatedTaxesUsd ?? 0) + Number(it.allocatedOtherUsd ?? 0);
 
-                    return (
-                      <tr key={it.id} className="border-b border-line/60 last:border-0">
-                        <td className="p-2">
-                          <span className="text-ink">{nombre}</span>
-                          {!it.product && (
-                            <span className="ml-2">
-                              <Badge>Fuera del catálogo</Badge>
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="p-2 text-right tabular-nums text-muted">{it.quantity}</td>
-
-                        <td className="p-2 text-right tabular-nums text-muted">
-                          {lineWeight} g
-                          <span className="block text-xs text-purple-2">{share.toFixed(1)}%</span>
-                        </td>
-
-                        <td className="p-2 text-right tabular-nums">
-                          <span className="font-semibold text-ink">
-                            {real != null ? usd(real) : "—"}
+                  return (
+                    <tr key={it.id} className="border-b border-line/60 align-top last:border-0">
+                      <td className="py-3 pr-3">
+                        <p className="text-ink">
+                          {nombre}
+                          {it.quantity > 1 && <span className="ml-1.5 text-muted">×{it.quantity}</span>}
+                        </p>
+                        {!it.product && (
+                          <span className="mt-1 inline-block">
+                            <Badge>Fuera del catálogo</Badge>
                           </span>
-                          {real != null && (
-                            <span className="block text-xs text-faint">
-                              {usd(Number(it.unitCostUsd))} + {usd(envio)} envío + {usd(imp)} aduana
+                        )}
+                      </td>
+
+                      <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-muted">
+                        {lineWeight} g
+                        <span className="block text-xs text-purple-2">{share.toFixed(1)}%</span>
+                      </td>
+
+                      <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
+                        <span className="font-semibold text-ink">{real != null ? usd(real) : "—"}</span>
+                        {real != null && (
+                          <span
+                            className="block text-xs text-faint"
+                            title={`Compra US$${Number(it.unitCostUsd).toFixed(2)} + envío US$${envio.toFixed(2)} + aduana US$${aduana.toFixed(2)}`}
+                          >
+                            {Number(it.unitCostUsd).toFixed(2)} · env {envio.toFixed(2)} · adu{" "}
+                            {aduana.toFixed(2)}
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-muted">
+                        {venta ? uyu(venta) : <span className="text-xs">—</span>}
+                      </td>
+
+                      <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
+                        {prof ? (
+                          <span className={prof.profitUyu >= 0 ? "text-stock" : "text-danger"}>
+                            {uyu(prof.profitUyu)}
+                            <span className="block text-xs opacity-70">{prof.marginPct}%</span>
+                          </span>
+                        ) : (
+                          <span className="text-xs text-faint">—</span>
+                        )}
+                      </td>
+
+                      <td className="whitespace-nowrap px-3 py-3 text-right">
+                        {ideal != null ? (
+                          <>
+                            <span className="font-semibold tabular-nums text-purple-2">{uyu(ideal)}</span>
+                            <span className="mt-1 block">
+                              {it.product ? (
+                                <ApplyPriceButton
+                                  productId={it.product.id}
+                                  orderId={order.id}
+                                  price={ideal}
+                                  current={venta}
+                                />
+                              ) : (
+                                <span className="text-xs text-faint">creá el producto</span>
+                              )}
                             </span>
-                          )}
-                        </td>
+                          </>
+                        ) : (
+                          <span className="text-xs text-faint">—</span>
+                        )}
+                      </td>
 
-                        <td className="p-2 text-right tabular-nums text-muted">
-                          {venta ? uyu(venta) : <span className="text-xs">—</span>}
-                        </td>
-
-                        <td className="p-2 text-right tabular-nums">
-                          {prof ? (
-                            <span className={prof.profitUyu >= 0 ? "text-stock" : "text-danger"}>
-                              {uyu(prof.profitUyu)}
-                              <span className="ml-1 text-xs opacity-70">({prof.marginPct}%)</span>
-                            </span>
-                          ) : (
-                            <span className="text-xs text-faint">—</span>
-                          )}
-                        </td>
-
-                        {/* Precio ideal + aplicar */}
-                        <td className="p-2 text-right">
-                          {ideal != null && it.product ? (
-                            <div className="flex items-center justify-end gap-2">
-                              <span className="font-semibold tabular-nums text-purple-2">
-                                {uyu(ideal)}
-                              </span>
-                              <ApplyPriceButton
-                                productId={it.product.id}
-                                orderId={order.id}
-                                price={ideal}
-                                current={venta}
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-xs text-faint">—</span>
-                          )}
-                        </td>
-
-                        <td className="p-2 text-right">
-                          <RemoveItemButton itemId={it.id} name={nombre} />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      <td className="py-3 pl-3 text-right">
+                        <RemoveItemButton itemId={it.id} name={nombre} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
 
             <p className="text-xs text-faint">
-              El <strong>costo real</strong> ya incluye el envío y la aduana, prorrateados por peso.
-              El <strong>precio ideal</strong> es el que te deja un {margenObjetivo}% de margen con el
-              dólar a {rate}: se calcula como costo ÷ (1 − {margenObjetivo}%). Los items fuera del
-              catálogo no tienen precio de venta.
+              El <strong>costo real</strong> ya incluye el envío y la aduana prorrateados por peso
+              (pasá el mouse por el desglose para ver el detalle). El <strong>precio ideal</strong> es
+              el que te deja un {margenObjetivo}% de margen con el dólar a {rate}. Para los items fuera
+              del catálogo se calcula igual, pero primero tenés que crear el producto para poder
+              aplicárselo.
             </p>
           </>
         )}
