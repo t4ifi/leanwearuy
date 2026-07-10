@@ -50,14 +50,14 @@ export function ProductForm({
   return (
     <form action={formAction} className="space-y-5">
       {state.error && (
-        <div className="rounded-xl border border-[#ff6b6b]/40 bg-[#ff6b6b]/10 px-4 py-3 text-sm text-[#ff8a8a]">
+        <div className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
           {state.error}
         </div>
       )}
 
       {/* ---------- Datos básicos ---------- */}
       <Card className="space-y-4">
-        <h2 className="font-semibold text-[#f3f1fa]">Datos del producto</h2>
+        <h2 className="font-semibold text-ink">Datos del producto</h2>
 
         <Field label="Nombre *" error={err("name")}>
           <Input name="name" defaultValue={defaults.name} required placeholder="Jordan 4 Lightning" />
@@ -112,8 +112,8 @@ export function ProductForm({
       {/* ---------- Precio y costo ---------- */}
       <Card className="space-y-4">
         <div>
-          <h2 className="font-semibold text-[#f3f1fa]">Precio y costo</h2>
-          <p className="mt-1 text-sm text-[#a39ec0]">
+          <h2 className="font-semibold text-ink">Precio y costo</h2>
+          <p className="mt-1 text-sm text-muted">
             El costo <strong>real</strong> se calcula solo cuando vinculás el producto a un pedido de
             importación (envío prorrateado por peso). Estos campos son de referencia.
           </p>
@@ -165,7 +165,7 @@ export function ProductForm({
 
       {/* ---------- Proveedor y stock ---------- */}
       <Card className="space-y-4">
-        <h2 className="font-semibold text-[#f3f1fa]">Proveedor y stock</h2>
+        <h2 className="font-semibold text-ink">Proveedor y stock</h2>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Proveedor">
@@ -224,7 +224,7 @@ export function ProductForm({
         </Button>
         <Link
           href="/admin/productos"
-          className="rounded-xl border border-[#2c2647] bg-[#1b1730] px-5 py-2.5 text-sm font-semibold text-[#a39ec0] transition hover:text-[#f3f1fa]"
+          className="rounded-xl border border-line-2 bg-panel-2 px-5 py-2.5 text-sm font-semibold text-muted transition hover:text-ink"
         >
           Cancelar
         </Link>

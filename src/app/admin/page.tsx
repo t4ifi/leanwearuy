@@ -1,15 +1,11 @@
-/**
- * Inicio del panel: métricas rápidas del catálogo.
- * Server Component: consulta la base directamente, sin API intermedia.
- */
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Card } from "@/components/ui";
+import { ButtonLink, Card, PageHeader, Stat } from "@/components/ui";
+import { IconPlus } from "@/components/admin/icons";
 
 export const dynamic = "force-dynamic";
 
 async function getStats() {
-  const [productos, activos, conPrecio, sinPrecio, destacados, agotados, marcas, imagenes, pocoStock] =
+  const [productos, activos, conPrecio, sinPrecio, destacados, agotados, marcas, imagenes, pedidos] =
     await Promise.all([
       prisma.product.count(),
       prisma.product.count({ where: { status: "ACTIVE" } }),
@@ -19,19 +15,9 @@ async function getStats() {
       prisma.product.count({ where: { soldOut: true } }),
       prisma.brand.count(),
       prisma.productImage.count(),
-      prisma.product.count({ where: { section: "STOCK", stock: { lte: 2 } } }),
+      prisma.importOrder.count(),
     ]);
-  return { productos, activos, conPrecio, sinPrecio, destacados, agotados, marcas, imagenes, pocoStock };
-}
-
-function Stat({ label, value, hint }: { label: string; value: number; hint?: string }) {
-  return (
-    <Card className="p-5">
-      <p className="text-xs uppercase tracking-wider text-[#6c6790]">{label}</p>
-      <p className="mt-1 text-3xl font-bold text-[#f3f1fa]">{value}</p>
-      {hint && <p className="mt-1 text-xs text-[#6c6790]">{hint}</p>}
-    </Card>
-  );
+  return { productos, activos, conPrecio, sinPrecio, destacados, agotados, marcas, imagenes, pedidos };
 }
 
 export default async function AdminHome() {
@@ -39,36 +25,40 @@ export default async function AdminHome() {
 
   return (
     <>
-      <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#f3f1fa]">Inicio</h1>
-          <p className="mt-1 text-sm text-[#a39ec0]">Resumen del catálogo.</p>
-        </div>
-        <Link
-          href="/admin/productos/nuevo"
-          className="rounded-xl bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
-        >
-          + Nuevo producto
-        </Link>
-      </div>
+      <PageHeader title="Inicio" description="Resumen del catálogo.">
+        <ButtonLink href="/admin/productos/nuevo">
+          <IconPlus className="size-4" />
+          Nuevo producto
+        </ButtonLink>
+      </PageHeader>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Productos" value={s.productos} hint={`${s.activos} publicados`} />
         <Stat label="Con precio" value={s.conPrecio} hint={`${s.sinPrecio} a consultar`} />
         <Stat label="Destacados" value={s.destacados} />
-        <Stat label="Agotados" value={s.agotados} />
-        <Stat label="Marcas" value={s.marcas} />
-        <Stat label="Imágenes" value={s.imagenes} />
-        <Stat label="Poco stock" value={s.pocoStock} hint="en sección Stock" />
+        <Stat label="Agotados" value={s.agotados} tone={s.agotados > 0 ? "warn" : undefined} />
       </div>
 
-      <Card className="mt-6">
-        <h2 className="font-semibold text-[#f3f1fa]">Próximamente</h2>
-        <p className="mt-1 text-sm text-[#a39ec0]">
-          Módulo de importaciones con costo real por producto (prorrateo del envío por peso),
-          ganancia, margen y estadísticas del negocio.
-        </p>
-      </Card>
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <Stat label="Marcas" value={s.marcas} />
+        <Stat label="Imágenes" value={s.imagenes} />
+        <Stat label="Pedidos de importación" value={s.pedidos} />
+      </div>
+
+      {s.pedidos === 0 && (
+        <Card className="mt-6 border-purple/25">
+          <h2 className="text-sm font-semibold text-ink">Empezá a medir tu negocio</h2>
+          <p className="mt-1.5 text-sm text-muted">
+            Cargá tu primer pedido de importación con el envío y los pesos de cada prenda. El sistema
+            calcula el costo real de cada producto y te muestra la ganancia y el margen.
+          </p>
+          <div className="mt-5">
+            <ButtonLink href="/admin/importaciones/nueva" variant="secondary">
+              Crear pedido de importación
+            </ButtonLink>
+          </div>
+        </Card>
+      )}
     </>
   );
 }

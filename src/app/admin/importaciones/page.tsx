@@ -1,7 +1,8 @@
 /** Listado de pedidos de importación. */
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Badge, Card } from "@/components/ui";
+import { Badge, ButtonLink, Card, EmptyState, PageHeader } from "@/components/ui";
+import { IconPlus } from "@/components/admin/icons";
 import { summarizeOrder } from "@/lib/imports";
 
 export const dynamic = "force-dynamic";
@@ -22,38 +23,34 @@ export default async function ImportacionesPage() {
 
   return (
     <>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#f3f1fa]">Importaciones</h1>
-          <p className="mt-1 text-sm text-[#a39ec0]">
-            El envío del pedido se reparte entre los productos según su peso.
-          </p>
-        </div>
-        <Link
-          href="/admin/importaciones/nueva"
-          className="rounded-xl bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
-        >
-          + Nuevo pedido
-        </Link>
-      </div>
+      <PageHeader
+        title="Importaciones"
+        description="El envío del pedido se reparte entre los productos según su peso."
+      >
+        <ButtonLink href="/admin/importaciones/nueva">
+          <IconPlus className="size-4" />
+          Nuevo pedido
+        </ButtonLink>
+      </PageHeader>
 
       {pedidos.length === 0 ? (
-        <Card>
-          <p className="text-center text-[#a39ec0]">
-            Todavía no cargaste ningún pedido. Creá el primero para empezar a calcular costos reales.
-          </p>
-        </Card>
+        <EmptyState
+          title="Todavía no cargaste ningún pedido"
+          description="Creá el primero para empezar a calcular el costo real de cada producto."
+        >
+          <ButtonLink href="/admin/importaciones/nueva">Nuevo pedido</ButtonLink>
+        </EmptyState>
       ) : (
         <div className="space-y-2.5">
           {pedidos.map((o) => {
             const s = summarizeOrder(o);
             const estado = ESTADOS[o.status];
             return (
-              <Link key={o.id} href={`/admin/importaciones/${o.id}`}>
-                <Card className="flex flex-wrap items-center gap-4 p-4 transition hover:border-[#8b5cf6]">
+              <Link key={o.id} href={`/admin/importaciones/${o.id}`} className="block">
+                <Card className="flex flex-wrap items-center gap-4 p-4 transition hover:border-purple">
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-[#f3f1fa]">{o.code}</p>
-                    <p className="text-xs text-[#6c6790]">
+                    <p className="font-semibold text-ink">{o.code}</p>
+                    <p className="text-xs text-faint">
                       {o.orderDate.toLocaleDateString("es-UY")}
                       {o.supplier && ` · ${o.supplier.name}`}
                       {` · ${s.unidades} u. · ${(s.pesoTotalG / 1000).toFixed(2)} kg`}
@@ -61,8 +58,10 @@ export default async function ImportacionesPage() {
                   </div>
                   <Badge tone={estado.tone}>{estado.label}</Badge>
                   <div className="text-right">
-                    <p className="font-semibold text-[#f3f1fa]">US$ {s.totalUsd.toLocaleString("es-UY")}</p>
-                    <p className="text-xs text-[#6c6790]">
+                    <p className="font-semibold tabular-nums text-ink">
+                      US$ {s.totalUsd.toLocaleString("es-UY")}
+                    </p>
+                    <p className="text-xs text-faint">
                       productos US$ {s.productosUsd} + extras US$ {s.extrasUsd}
                     </p>
                   </div>

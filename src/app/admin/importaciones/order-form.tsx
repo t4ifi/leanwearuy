@@ -33,13 +33,13 @@ export function OrderForm({
   return (
     <form action={formAction} className="space-y-5">
       {state.error && (
-        <div className="rounded-xl border border-[#ff6b6b]/40 bg-[#ff6b6b]/10 px-4 py-3 text-sm text-[#ff8a8a]">
+        <div className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
           {state.error}
         </div>
       )}
 
       <Card className="space-y-4">
-        <h2 className="font-semibold text-[#f3f1fa]">Datos del pedido</h2>
+        <h2 className="font-semibold text-ink">Datos del pedido</h2>
 
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Código *" hint="Ej: IMP-001">
@@ -75,8 +75,8 @@ export function OrderForm({
 
       <Card className="space-y-4">
         <div>
-          <h2 className="font-semibold text-[#f3f1fa]">Costos del pedido (en USD)</h2>
-          <p className="mt-1 text-sm text-[#a39ec0]">
+          <h2 className="font-semibold text-ink">Costos del pedido (en USD)</h2>
+          <p className="mt-1 text-sm text-muted">
             Estos costos se pagan <strong>una sola vez por todo el pedido</strong> y se reparten
             entre los productos <strong>según su peso</strong>.
           </p>

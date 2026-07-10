@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/ui";
 import { updateProduct } from "../../actions";
 import { ProductForm } from "../../product-form";
 import { ImageManager } from "../../image-manager";
@@ -36,13 +36,11 @@ export default async function EditarProductoPage({
 
   return (
     <>
-      <div className="mb-6">
-        <Link href="/admin/productos" className="text-sm text-[#a39ec0] hover:text-[#f3f1fa]">
-          ← Volver a productos
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-[#f3f1fa]">{producto.name}</h1>
-        <p className="mt-1 text-sm text-[#6c6790]">/{producto.slug}</p>
-      </div>
+      <PageHeader
+        title={producto.name}
+        description={`/producto/${producto.slug}`}
+        back={{ href: "/admin/productos", label: "Volver a productos" }}
+      />
 
       <div className="mb-5">
         <ImageManager

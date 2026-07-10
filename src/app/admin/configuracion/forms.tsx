@@ -21,8 +21,8 @@ export function ActionForm({
   return (
     <form action={formAction} className={className}>
       {children}
-      {state.error && <p className="mt-2 text-sm text-[#ff8a8a]">{state.error}</p>}
-      {state.ok && <p className="mt-2 text-sm text-[#34d399]">{state.ok}</p>}
+      {state.error && <p className="mt-2 text-sm text-danger">{state.error}</p>}
+      {state.ok && <p className="mt-2 text-sm text-stock">{state.ok}</p>}
       <div className="mt-4">
         <Button type="submit" disabled={pending}>
           {pending ? "Guardando..." : submitLabel}
@@ -47,10 +47,10 @@ export function DeletableRow({
   const [pending, start] = useTransition();
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-xl border border-[#2c2647] bg-[#1b1730] px-3.5 py-2.5">
+    <li className="flex items-center justify-between gap-3 rounded-xl border border-line-2 bg-panel-2 px-3.5 py-2.5">
       <div className="min-w-0">
-        <p className="truncate text-sm text-[#f3f1fa]">{label}</p>
-        {sub && <p className="truncate text-xs text-[#6c6790]">{sub}</p>}
+        <p className="truncate text-sm text-ink">{label}</p>
+        {sub && <p className="truncate text-xs text-faint">{sub}</p>}
       </div>
       <button
         disabled={pending}
@@ -60,7 +60,7 @@ export function DeletableRow({
             if (res?.error) alert(res.error);
           })
         }
-        className="shrink-0 rounded-lg border border-[#ff6b6b]/40 px-2.5 py-1 text-xs text-[#ff8a8a] transition hover:bg-[#ff6b6b]/15 disabled:opacity-50"
+        className="shrink-0 rounded-lg border border-danger/40 px-2.5 py-1 text-xs text-danger transition hover:bg-danger/15 disabled:opacity-50"
       >
         {pending ? "..." : "Borrar"}
       </button>
@@ -89,13 +89,13 @@ export function InlineCreate({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-xl bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
+          className="rounded-xl bg-gradient-to-br from-purple-2 to-purple-3 px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
         >
           {pending ? "..." : buttonLabel}
         </button>
       </div>
-      {state.error && <p className="mt-2 text-sm text-[#ff8a8a]">{state.error}</p>}
-      {state.ok && <p className="mt-2 text-sm text-[#34d399]">{state.ok}</p>}
+      {state.error && <p className="mt-2 text-sm text-danger">{state.error}</p>}
+      {state.ok && <p className="mt-2 text-sm text-stock">{state.ok}</p>}
     </form>
   );
 }

@@ -14,11 +14,11 @@ export default async function NuevoPedidoPage() {
   return (
     <>
       <div className="mb-6">
-        <Link href="/admin/importaciones" className="text-sm text-[#a39ec0] hover:text-[#f3f1fa]">
+        <Link href="/admin/importaciones" className="text-sm text-muted hover:text-ink">
           ← Volver a importaciones
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-[#f3f1fa]">Nuevo pedido</h1>
-        <p className="mt-1 text-sm text-[#a39ec0]">
+        <h1 className="mt-2 text-2xl font-bold text-ink">Nuevo pedido</h1>
+        <p className="mt-1 text-sm text-muted">
           Creá el pedido y después agregale los productos con su peso.
         </p>
       </div>

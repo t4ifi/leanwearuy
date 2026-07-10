@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/ui";
 import { createProduct } from "../actions";
 import { ProductForm } from "../product-form";
 
@@ -24,12 +24,11 @@ export default async function NuevoProductoPage() {
 
   return (
     <>
-      <div className="mb-6">
-        <Link href="/admin/productos" className="text-sm text-[#a39ec0] hover:text-[#f3f1fa]">
-          ← Volver a productos
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-[#f3f1fa]">Nuevo producto</h1>
-      </div>
+      <PageHeader
+        title="Nuevo producto"
+        description="Después de crearlo vas a poder subirle las fotos."
+        back={{ href: "/admin/productos", label: "Volver a productos" }}
+      />
 
       <ProductForm
         action={createProduct}

@@ -50,11 +50,11 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
   return (
     <>
       <div className="mb-6">
-        <Link href="/admin/importaciones" className="text-sm text-[#a39ec0] hover:text-[#f3f1fa]">
+        <Link href="/admin/importaciones" className="text-sm text-muted hover:text-ink">
           ← Volver a importaciones
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-[#f3f1fa]">{order.code}</h1>
-        <p className="mt-1 text-sm text-[#6c6790]">
+        <h1 className="mt-2 text-2xl font-bold text-ink">{order.code}</h1>
+        <p className="mt-1 text-sm text-faint">
           {order.orderDate.toLocaleDateString("es-UY")}
           {order.supplier && ` · ${order.supplier.name}`} · dólar {rate}
         </p>
@@ -69,8 +69,8 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
           { l: "Peso total", v: `${(pesoTotal / 1000).toFixed(2)} kg` },
         ].map((x) => (
           <Card key={x.l} className="p-4">
-            <p className="text-xs uppercase tracking-wider text-[#6c6790]">{x.l}</p>
-            <p className="mt-1 text-xl font-bold text-[#f3f1fa]">{x.v}</p>
+            <p className="text-xs uppercase tracking-wider text-faint">{x.l}</p>
+            <p className="mt-1 text-xl font-bold text-ink">{x.v}</p>
           </Card>
         ))}
       </div>
@@ -78,8 +78,8 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
       {/* ---------- Productos del pedido ---------- */}
       <Card className="mb-6 space-y-5">
         <div>
-          <h2 className="font-semibold text-[#f3f1fa]">Productos del pedido</h2>
-          <p className="mt-1 text-sm text-[#a39ec0]">
+          <h2 className="font-semibold text-ink">Productos del pedido</h2>
+          <p className="mt-1 text-sm text-muted">
             El envío se reparte por peso: lo que más pesa, más envío absorbe.
           </p>
         </div>
@@ -87,14 +87,14 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
         <AddItemForm orderId={order.id} productos={opciones} />
 
         {order.items.length === 0 ? (
-          <p className="py-6 text-center text-sm text-[#6c6790]">
+          <p className="py-6 text-center text-sm text-faint">
             Agregá productos para ver el cálculo del costo real.
           </p>
         ) : (
           <div className="-mx-2 overflow-x-auto">
             <table className="w-full min-w-4xl border-collapse text-sm">
               <thead>
-                <tr className="border-b border-[#221d36] text-left text-xs uppercase tracking-wider text-[#6c6790]">
+                <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-faint">
                   <th className="p-2 font-medium">Producto</th>
                   <th className="p-2 text-right font-medium">Cant.</th>
                   <th className="p-2 text-right font-medium">Costo c/u</th>
@@ -116,29 +116,29 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
                   const prof = lineProfit({ realCostUsd: real, salePriceUyu: venta, exchangeRate: rate });
 
                   return (
-                    <tr key={it.id} className="border-b border-[#221d36]/60">
-                      <td className="p-2 text-[#f3f1fa]">{it.product.name}</td>
-                      <td className="p-2 text-right text-[#a39ec0]">{it.quantity}</td>
-                      <td className="p-2 text-right text-[#a39ec0]">{usd(Number(it.unitCostUsd))}</td>
-                      <td className="p-2 text-right text-[#a39ec0]">{lineWeight} g</td>
-                      <td className="p-2 text-right text-[#a78bfa]">{share.toFixed(1)}%</td>
-                      <td className="p-2 text-right text-[#a39ec0]">
+                    <tr key={it.id} className="border-b border-line/60">
+                      <td className="p-2 text-ink">{it.product.name}</td>
+                      <td className="p-2 text-right text-muted">{it.quantity}</td>
+                      <td className="p-2 text-right text-muted">{usd(Number(it.unitCostUsd))}</td>
+                      <td className="p-2 text-right text-muted">{lineWeight} g</td>
+                      <td className="p-2 text-right text-purple-2">{share.toFixed(1)}%</td>
+                      <td className="p-2 text-right text-muted">
                         {it.allocatedShippingUsd ? usd(Number(it.allocatedShippingUsd)) : "—"}
                       </td>
-                      <td className="p-2 text-right font-semibold text-[#f3f1fa]">
+                      <td className="p-2 text-right font-semibold text-ink">
                         {real != null ? usd(real) : "—"}
                       </td>
-                      <td className="p-2 text-right text-[#a39ec0]">
+                      <td className="p-2 text-right text-muted">
                         {venta ? uyu(venta) : <span className="text-xs">Consultar</span>}
                       </td>
                       <td className="p-2 text-right">
                         {prof ? (
-                          <span className={prof.profitUyu >= 0 ? "text-[#34d399]" : "text-[#ff8a8a]"}>
+                          <span className={prof.profitUyu >= 0 ? "text-stock" : "text-danger"}>
                             {uyu(prof.profitUyu)}
                             <span className="ml-1 text-xs opacity-70">({prof.marginPct}%)</span>
                           </span>
                         ) : (
-                          <span className="text-xs text-[#6c6790]">—</span>
+                          <span className="text-xs text-faint">—</span>
                         )}
                       </td>
                       <td className="p-2 text-right">
@@ -153,7 +153,7 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
         )}
 
         {order.items.length > 0 && (
-          <p className="text-xs text-[#6c6790]">
+          <p className="text-xs text-faint">
             El <strong>costo real</strong> ya incluye el envío, los impuestos y los gastos
             prorrateados por peso. La <strong>ganancia</strong> compara ese costo (convertido a
             pesos con el dólar {rate}) contra el precio de venta del producto.
@@ -163,7 +163,7 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
 
       {/* ---------- Editar el pedido ---------- */}
       <div className="mb-3 flex items-center gap-3">
-        <h2 className="font-semibold text-[#f3f1fa]">Editar pedido</h2>
+        <h2 className="font-semibold text-ink">Editar pedido</h2>
         <Badge>los cambios recalculan el prorrateo</Badge>
       </div>
 

@@ -35,15 +35,15 @@ export default async function ConfiguracionPage() {
   return (
     <>
       <div className="mb-7">
-        <h1 className="text-2xl font-bold text-[#f3f1fa]">Configuración</h1>
-        <p className="mt-1 text-sm text-[#a39ec0]">
+        <h1 className="text-2xl font-bold text-ink">Configuración</h1>
+        <p className="mt-1 text-sm text-muted">
           Todo esto se cambia sin tocar código. Los datos de contacto se usan en el sitio público.
         </p>
       </div>
 
       {/* ---------------- Tienda ---------------- */}
       <Card className="mb-5">
-        <h2 className="mb-4 font-semibold text-[#f3f1fa]">Datos de la tienda</h2>
+        <h2 className="mb-4 font-semibold text-ink">Datos de la tienda</h2>
 
         <ActionForm action={updateSettings} submitLabel="Guardar configuración">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -61,8 +61,8 @@ export default async function ConfiguracionPage() {
             </Field>
           </div>
 
-          <div className="mt-5 rounded-xl border border-[#2c2647] bg-[#1b1730]/50 p-4">
-            <p className="mb-4 text-sm font-medium text-[#f3f1fa]">Moneda y cálculos</p>
+          <div className="mt-5 rounded-xl border border-line-2 bg-panel-2/50 p-4">
+            <p className="mb-4 text-sm font-medium text-ink">Moneda y cálculos</p>
             <div className="grid gap-4 sm:grid-cols-4">
               <Field label="Símbolo">
                 <Input name="currencySymbol" defaultValue={settings?.currencySymbol ?? "$"} required />
@@ -99,8 +99,8 @@ export default async function ConfiguracionPage() {
       <div className="grid gap-5 lg:grid-cols-2">
         {/* ---------------- Marcas ---------------- */}
         <Card>
-          <h2 className="font-semibold text-[#f3f1fa]">Marcas</h2>
-          <p className="mt-1 text-sm text-[#a39ec0]">No se pueden borrar si tienen productos.</p>
+          <h2 className="font-semibold text-ink">Marcas</h2>
+          <p className="mt-1 text-sm text-muted">No se pueden borrar si tienen productos.</p>
 
           <InlineCreate action={createBrand} placeholder="Nombre de la marca" />
 
@@ -119,8 +119,8 @@ export default async function ConfiguracionPage() {
 
         {/* ---------------- Categorías ---------------- */}
         <Card>
-          <h2 className="font-semibold text-[#f3f1fa]">Categorías</h2>
-          <p className="mt-1 text-sm text-[#a39ec0]">Cada una pertenece a un grupo del menú.</p>
+          <h2 className="font-semibold text-ink">Categorías</h2>
+          <p className="mt-1 text-sm text-muted">Cada una pertenece a un grupo del menú.</p>
 
           <InlineCreate
             action={createCategory}
@@ -150,8 +150,8 @@ export default async function ConfiguracionPage() {
 
         {/* ---------------- Proveedores ---------------- */}
         <Card className="lg:col-span-2">
-          <h2 className="font-semibold text-[#f3f1fa]">Proveedores</h2>
-          <p className="mt-1 text-sm text-[#a39ec0]">Kakobuy, Taobao, Weidian, Yupoo…</p>
+          <h2 className="font-semibold text-ink">Proveedores</h2>
+          <p className="mt-1 text-sm text-muted">Kakobuy, Taobao, Weidian, Yupoo…</p>
 
           <InlineCreate
             action={createSupplier}

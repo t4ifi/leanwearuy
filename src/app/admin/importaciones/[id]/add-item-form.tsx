@@ -11,7 +11,7 @@ export function AddItemForm({ orderId, productos }: { orderId: string; productos
 
   return (
     <form action={formAction} className="space-y-3">
-      {state.error && <p className="text-sm text-[#ff8a8a]">{state.error}</p>}
+      {state.error && <p className="text-sm text-danger">{state.error}</p>}
 
       <div className="grid gap-3 sm:grid-cols-[2fr_repeat(3,1fr)_auto] sm:items-end">
         <Field label="Producto *">

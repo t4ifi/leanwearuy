@@ -34,8 +34,8 @@ export function ImageManager({
   return (
     <Card className="space-y-4">
       <div>
-        <h2 className="font-semibold text-[#f3f1fa]">Fotos</h2>
-        <p className="mt-1 text-sm text-[#a39ec0]">
+        <h2 className="font-semibold text-ink">Fotos</h2>
+        <p className="mt-1 text-sm text-muted">
           La <strong>principal</strong> es la que se ve en el catálogo. JPG, PNG, WEBP o AVIF, hasta 8 MB.
         </p>
       </div>
@@ -55,15 +55,15 @@ export function ImageManager({
         }}
         className={`cursor-pointer rounded-xl border-2 border-dashed p-6 text-center text-sm transition ${
           dragging
-            ? "border-[#8b5cf6] bg-[#1b1730] text-[#f3f1fa]"
-            : "border-[#2c2647] text-[#a39ec0] hover:border-[#8b5cf6]"
+            ? "border-purple bg-panel-2 text-ink"
+            : "border-line-2 text-muted hover:border-purple"
         }`}
       >
         {pending ? (
           "Subiendo..."
         ) : (
           <>
-            Arrastrá las fotos acá o <span className="text-[#a78bfa]">hacé click para elegir</span>
+            Arrastrá las fotos acá o <span className="text-purple-2">hacé click para elegir</span>
           </>
         )}
         <input
@@ -79,7 +79,7 @@ export function ImageManager({
         />
       </div>
 
-      {error && <p className="text-sm text-[#ff8a8a]">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       {images.length > 0 && (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
@@ -87,14 +87,14 @@ export function ImageManager({
             <div
               key={img.id}
               className={`group relative aspect-square overflow-hidden rounded-xl border-2 ${
-                img.isPrimary ? "border-[#8b5cf6]" : "border-[#2c2647]"
+                img.isPrimary ? "border-purple" : "border-line-2"
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.url} alt="" className="size-full bg-[#0e0c18] object-cover" />
+              <img src={img.url} alt="" className="size-full bg-bg-elev object-cover" />
 
               {img.isPrimary && (
-                <span className="absolute left-1.5 top-1.5 rounded-full bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] px-2 py-0.5 text-[10px] font-bold text-white">
+                <span className="absolute left-1.5 top-1.5 rounded-full bg-gradient-to-br from-purple-2 to-purple-3 px-2 py-0.5 text-[10px] font-bold text-white">
                   Principal
                 </span>
               )}
@@ -105,7 +105,7 @@ export function ImageManager({
                     type="button"
                     disabled={pending}
                     onClick={() => startTransition(() => setPrimaryImage(img.id).then(() => {}))}
-                    className="flex-1 rounded-md bg-[#1b1730]/90 py-1 text-[10px] text-white hover:bg-[#6d28d9]"
+                    className="flex-1 rounded-md bg-panel-2/90 py-1 text-[10px] text-white hover:bg-purple-3"
                   >
                     ★ Principal
                   </button>
@@ -117,7 +117,7 @@ export function ImageManager({
                     if (!confirm("¿Borrar esta foto?")) return;
                     startTransition(() => deleteImage(img.id).then(() => {}));
                   }}
-                  className="flex-1 rounded-md bg-[#1b1730]/90 py-1 text-[10px] text-[#ff8a8a] hover:bg-[#ff6b6b]/30"
+                  className="flex-1 rounded-md bg-panel-2/90 py-1 text-[10px] text-danger hover:bg-danger/30"
                 >
                   Borrar
                 </button>

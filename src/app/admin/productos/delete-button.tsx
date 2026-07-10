@@ -22,7 +22,7 @@ export function DeleteButton({ id, name }: { id: string; name: string }) {
           if (res?.archived) alert("El producto estaba en un pedido: se archivó en vez de borrarse.");
         });
       }}
-      className="rounded-lg border border-[#ff6b6b]/40 px-3 py-1.5 text-xs text-[#ff8a8a] transition hover:bg-[#ff6b6b]/15 disabled:opacity-50"
+      className="rounded-lg border border-danger/40 px-2.5 py-1.5 text-xs text-danger transition hover:bg-danger/10 disabled:opacity-50"
     >
       {pending ? "..." : "Eliminar"}
     </button>
