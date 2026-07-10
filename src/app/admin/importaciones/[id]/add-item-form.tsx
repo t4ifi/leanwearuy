@@ -1,13 +1,23 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button, Field, Input, Select } from "@/components/ui";
 import { addImportItem, type ActionState } from "../actions";
+import { FUERA_DE_CATALOGO } from "@/lib/import-constants";
 import type { Option } from "../../productos/product-form";
 
+/**
+ * Agrega una línea al pedido.
+ *
+ * Puede ser un producto del catálogo o un artículo que no se publica en la
+ * web. En ambos casos pesa y por lo tanto absorbe parte del envío.
+ */
 export function AddItemForm({ orderId, productos }: { orderId: string; productos: Option[] }) {
   const action = addImportItem.bind(null, orderId);
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, {});
+  const [productId, setProductId] = useState("");
+
+  const fueraDeCatalogo = productId === FUERA_DE_CATALOGO;
 
   return (
     <form action={formAction} className="space-y-3">
@@ -15,11 +25,17 @@ export function AddItemForm({ orderId, productos }: { orderId: string; productos
 
       <div className="grid gap-3 sm:grid-cols-[2fr_repeat(3,1fr)_auto] sm:items-end">
         <Field label="Producto *">
-          <Select name="productId" required defaultValue="">
+          <Select
+            name="productId"
+            required
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+          >
             <option value="">Elegir producto…</option>
             {productos.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
+            <option value={FUERA_DE_CATALOGO}>➕ Fuera del catálogo…</option>
           </Select>
         </Field>
 
@@ -39,6 +55,17 @@ export function AddItemForm({ orderId, productos }: { orderId: string; productos
           {pending ? "..." : "Agregar"}
         </Button>
       </div>
+
+      {fueraDeCatalogo && (
+        <div className="rounded-lg border border-purple/30 bg-purple/5 p-4">
+          <Field
+            label="Nombre del producto *"
+            hint="No se publica en la web, pero suma su peso y su costo al pedido."
+          >
+            <Input name="name" placeholder="Ej: Riñonera Nike (para mí)" required className="sm:max-w-md" />
+          </Field>
+        </div>
+      )}
     </form>
   );
 }

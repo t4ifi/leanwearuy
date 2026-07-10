@@ -267,13 +267,20 @@ model ImportOrder {
 }
 
 // Un producto dentro de un pedido. Acá vive el costo REAL.
+//
+// El item puede apuntar a un producto del catálogo (productId) O ser un
+// artículo suelto que no se publica en la web (productId null + name).
+// Igual pesa y ocupa envío, así que tiene que entrar en el prorrateo.
 model ImportItem {
-  id            String @id @default(cuid())
+  id            String  @id @default(cuid())
   importOrderId String
-  productId     String
+  productId     String? // null = producto fuera del catálogo
 
   importOrder ImportOrder @relation(fields: [importOrderId], references: [id], onDelete: Cascade)
-  product     Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  product     Product?    @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  /// Nombre a mano, sólo cuando el item no está en el catálogo.
+  name String?
 
   quantity        Int     @default(1)
   unitCostUsd     Decimal @db.Decimal(12, 2) // costo de compra unitario

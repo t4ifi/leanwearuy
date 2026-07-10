@@ -11,6 +11,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guard";
 import { recalcImportOrder } from "@/lib/imports";
+import { FUERA_DE_CATALOGO } from "@/lib/import-constants";
 
 export type ActionState = { error?: string };
 
@@ -97,6 +98,7 @@ export async function deleteImportOrder(id: string) {
 
 const itemSchema = z.object({
   productId: z.string().min(1, "Elegí un producto"),
+  name: z.string().transform((s) => s.trim()),
   quantity: num(1).refine((v) => v >= 1, "La cantidad mínima es 1"),
   unitCostUsd: num(),
   unitWeightGrams: num().refine((v) => v >= 0, "El peso no puede ser negativo"),
@@ -107,25 +109,37 @@ export async function addImportItem(orderId: string, _p: ActionState, fd: FormDa
 
   const parsed = itemSchema.safeParse({
     productId: (fd.get("productId") ?? "").toString(),
+    name: (fd.get("name") ?? "").toString(),
     quantity: (fd.get("quantity") ?? "").toString(),
     unitCostUsd: (fd.get("unitCostUsd") ?? "").toString(),
     unitWeightGrams: (fd.get("unitWeightGrams") ?? "").toString(),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
 
-  const d = parsed.data;
-  const repetido = await prisma.importItem.findUnique({
-    where: { importOrderId_productId: { importOrderId: orderId, productId: d.productId } },
-  });
-  if (repetido) return { error: "Ese producto ya está en el pedido. Editá la línea existente." };
+  const { productId, name, ...rest } = parsed.data;
+  const fueraDeCatalogo = productId === FUERA_DE_CATALOGO;
 
-  await prisma.importItem.create({ data: { ...d, importOrderId: orderId } });
+  if (fueraDeCatalogo) {
+    if (!name) return { error: "Escribí el nombre del producto fuera del catálogo." };
 
-  // Copiamos peso y costo al producto, para tenerlos a mano en el catálogo.
-  await prisma.product.update({
-    where: { id: d.productId },
-    data: { weightGrams: d.unitWeightGrams, purchaseCostUsd: d.unitCostUsd },
-  });
+    // Sin productId no hay clave única, así que pueden repetirse nombres.
+    await prisma.importItem.create({
+      data: { ...rest, name, productId: null, importOrderId: orderId },
+    });
+  } else {
+    const repetido = await prisma.importItem.findUnique({
+      where: { importOrderId_productId: { importOrderId: orderId, productId } },
+    });
+    if (repetido) return { error: "Ese producto ya está en el pedido. Editá la línea existente." };
+
+    await prisma.importItem.create({ data: { ...rest, productId, importOrderId: orderId } });
+
+    // Copiamos peso y costo al producto, para tenerlos a mano en el catálogo.
+    await prisma.product.update({
+      where: { id: productId },
+      data: { weightGrams: rest.unitWeightGrams, purchaseCostUsd: rest.unitCostUsd },
+    });
+  }
 
   await recalcImportOrder(orderId);
   revalidatePath(`/admin/importaciones/${orderId}`);
