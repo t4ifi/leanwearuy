@@ -9,6 +9,9 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
+  // En Vercel el dominio lo pone la plataforma; confiamos en el host del deploy.
+  trustHost: true,
+
   pages: {
     signIn: "/login",
   },
