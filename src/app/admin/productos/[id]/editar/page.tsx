@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { updateProduct } from "../../actions";
 import { ProductForm } from "../../product-form";
+import { ImageManager } from "../../image-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -43,25 +44,12 @@ export default async function EditarProductoPage({
         <p className="mt-1 text-sm text-[#6c6790]">/{producto.slug}</p>
       </div>
 
-      {producto.images.length > 0 && (
-        <div className="mb-5 flex flex-wrap gap-2.5">
-          {producto.images.map((img) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={img.id}
-              src={img.url}
-              alt=""
-              title={img.isPrimary ? "Imagen principal" : undefined}
-              className={`size-20 rounded-lg border-2 object-cover ${
-                img.isPrimary ? "border-[#8b5cf6]" : "border-[#2c2647]"
-              }`}
-            />
-          ))}
-          <p className="self-center text-xs text-[#6c6790]">
-            {producto.images.length} imágenes · la subida se habilita al migrar a R2
-          </p>
-        </div>
-      )}
+      <div className="mb-5">
+        <ImageManager
+          productId={producto.id}
+          images={producto.images.map((i) => ({ id: i.id, url: i.url, isPrimary: i.isPrimary }))}
+        />
+      </div>
 
       <ProductForm
         action={action}
