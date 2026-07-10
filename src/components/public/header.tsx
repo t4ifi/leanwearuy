@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconEncargues, IconSearch, IconStock, IconChat } from "./icons";
+import { IconEncargues, IconSearch, IconStock, IconChat, IconUser } from "./icons";
 
 /**
  * Header público: logo, buscador y navegación.
@@ -8,7 +8,12 @@ import { IconEncargues, IconSearch, IconStock, IconChat } from "./icons";
  */
 export function Header({ active }: { active?: "stock" | "encargues" | "como-comprar" }) {
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-bg/90 backdrop-blur-lg">
+    <header
+      className="sticky top-0 z-50 border-b border-line backdrop-blur-lg"
+      style={{
+        background: "linear-gradient(180deg, rgba(20,14,38,.92), rgba(10,9,18,.92))",
+      }}
+    >
       <div className="mx-auto flex h-16 max-w-[1500px] items-center gap-5 px-5">
         <Link href="/" className="shrink-0 font-head text-xl font-extrabold tracking-tight">
           Lean
@@ -50,6 +55,10 @@ export function Header({ active }: { active?: "stock" | "encargues" | "como-comp
             <IconChat className="size-4" />
             <span className="hidden sm:inline">Cómo comprar</span>
           </NavLink>
+
+          <span className="ml-1.5 grid size-9 place-items-center rounded-full border border-line-2 bg-panel-2 text-muted">
+            <IconUser className="size-4" />
+          </span>
         </nav>
       </div>
     </header>

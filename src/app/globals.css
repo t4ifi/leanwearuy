@@ -1,31 +1,56 @@
 @import "tailwindcss";
 
 /**
- * Paleta de LeanWear (la misma del sitio original).
- * Definirla acá permite usar clases como `bg-bg`, `text-muted`, `border-line`.
+ * Paleta de LeanWear (los mismos valores del sitio original).
+ *
+ * Se definen como variables normales en :root -> siempre aplican, pase lo
+ * que pase con el pipeline de CSS. Después `@theme inline` le enseña a
+ * Tailwind a generar utilidades (bg-bg, text-muted, from-pink, ...) que
+ * apuntan a esas variables. Es el patrón recomendado y a prueba de balas.
  */
-@theme {
-  --color-bg: #0a0912;
-  --color-bg-elev: #0e0c18;
-  --color-panel: #110f1d;
-  --color-panel-2: #1b1730;
-  --color-line: #221d36;
-  --color-line-2: #2c2647;
+:root {
+  --bg: #0a0912;
+  --bg-elev: #0e0c18;
+  --panel: #110f1d;
+  --panel-2: #1b1730;
+  --line: #221d36;
+  --line-2: #2c2647;
 
-  --color-ink: #f3f1fa;
-  --color-muted: #a39ec0;
-  --color-faint: #6c6790;
+  --ink: #f3f1fa;
+  --muted: #a39ec0;
+  --faint: #6c6790;
 
-  --color-purple: #8b5cf6;
-  --color-purple-2: #a78bfa;
-  --color-purple-3: #7c3aed;
-  --color-pink: #ff6fd1;
+  --purple: #8b5cf6;
+  --purple-2: #a78bfa;
+  --purple-3: #7c3aed;
+  --pink: #ff6fd1;
 
-  --color-stock: #34d399;
-  --color-danger: #ff8a8a;
+  --stock: #34d399;
+  --danger: #ff8a8a;
+}
 
-  --font-head: var(--font-sora), system-ui, sans-serif;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elev: var(--bg-elev);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  --color-purple: var(--purple);
+  --color-purple-2: var(--purple-2);
+  --color-purple-3: var(--purple-3);
+  --color-pink: var(--pink);
+
+  --color-stock: var(--stock);
+  --color-danger: var(--danger);
+
+  --font-head: var(--font-sora);
+  --font-sans: var(--font-inter);
 }
 
 html {
@@ -33,9 +58,9 @@ html {
 }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -47,8 +72,8 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(70% 40% at 50% -10%, rgba(124, 58, 237, 0.18), transparent 60%),
-    linear-gradient(180deg, #0a0912 0%, #08070f 100%);
+    radial-gradient(70% 40% at 50% -10%, rgba(124, 58, 237, 0.22), transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, #08070f 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {

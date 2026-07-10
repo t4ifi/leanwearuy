@@ -37,6 +37,13 @@ export const IconSearch = (p: { className?: string }) => (
   </svg>
 );
 
+export const IconUser = (p: { className?: string }) => (
+  <svg {...base} className={p.className}>
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
 export const IconInstagram = (p: { className?: string }) => (
   <svg {...base} className={p.className}>
     <rect x="2" y="2" width="20" height="20" rx="5.5" />
