@@ -250,11 +250,28 @@ model ImportOrder {
   supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
   // --- Costos del PEDIDO COMPLETO (en USD) ---
-  // El envío se paga una sola vez por todo el pedido y luego se
-  // prorratea entre los productos SEGÚN SU PESO.
+  // Se pagan una sola vez por todo el pedido y luego se prorratean entre
+  // los productos SEGÚN SU PESO.
   shippingCostUsd Decimal @default(0) @db.Decimal(12, 2)
-  taxesUsd        Decimal @default(0) @db.Decimal(12, 2)
   otherCostsUsd   Decimal @default(0) @db.Decimal(12, 2)
+
+  // --- Aduana (Uruguay) ---
+  // Con franquicia el impuesto es menor (≈22%) que sin ella (≈60%).
+  // Las tasas por defecto salen de StoreSettings, pero cada pedido guarda
+  // las suyas (histórico) y se pueden ajustar a mano.
+  usesFranchise Boolean @default(true)
+  taxRatePct    Decimal @default(22) @db.Decimal(5, 2)
+
+  /// Valor sobre el que se calcula el impuesto.
+  /// Si es null se usa el costo de los productos del pedido.
+  customsBaseUsd Decimal? @db.Decimal(12, 2)
+
+  /// Impuesto calculado = base * taxRatePct. Lo recalcula el sistema.
+  taxesUsd Decimal @default(0) @db.Decimal(12, 2)
+
+  postalFeeUsd Decimal @default(0) @db.Decimal(12, 2) // Servicio de Correo Uruguayo
+  storageUsd   Decimal @default(0) @db.Decimal(12, 2) // Costo de almacenamiento
+  creditUsd    Decimal @default(0) @db.Decimal(12, 2) // Saldo a favor (resta)
 
   // Tipo de cambio USD->UYU usado en ESTE pedido (histórico, editable).
   exchangeRate Decimal @db.Decimal(12, 4)
@@ -325,6 +342,12 @@ model StoreSettings {
   currencySymbol     String  @default("$")
   exchangeRateUsdUyu Decimal @default(40) @db.Decimal(12, 4) // editable
   defaultMarginPct   Decimal @default(50) @db.Decimal(5, 2) // margen sugerido
+
+  // Aduana de Uruguay: valores por defecto al crear un pedido.
+  franchiseTaxPct       Decimal @default(22) @db.Decimal(5, 2)
+  franchisePostalFeeUsd Decimal @default(2.60) @db.Decimal(12, 2)
+  standardTaxPct        Decimal @default(60) @db.Decimal(5, 2)
+  standardPostalFeeUsd  Decimal @default(4.50) @db.Decimal(12, 2)
 
   // Textos de la web
   encargueLeadTimeDays String? @default("25-30")

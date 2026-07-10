@@ -19,6 +19,11 @@ const pos = z
   .transform((s) => Number(s))
   .refine((n) => Number.isFinite(n) && n > 0, "Tiene que ser un número mayor a 0");
 
+const nonNeg = z
+  .string()
+  .transform((s) => Number(s === "" ? 0 : s))
+  .refine((n) => Number.isFinite(n) && n >= 0, "No puede ser negativo");
+
 const settingsSchema = z.object({
   storeName: z.string().trim().min(1, "El nombre no puede estar vacío"),
   tagline: opt,
@@ -31,6 +36,12 @@ const settingsSchema = z.object({
     .transform((s) => Number(s))
     .refine((n) => Number.isFinite(n) && n >= 0 && n < 100, "El margen va de 0 a 99"),
   encargueLeadTimeDays: opt,
+
+  // Aduana de Uruguay
+  franchiseTaxPct: nonNeg,
+  franchisePostalFeeUsd: nonNeg,
+  standardTaxPct: nonNeg,
+  standardPostalFeeUsd: nonNeg,
 });
 
 export async function updateSettings(_p: ActionState, fd: FormData): Promise<ActionState> {
@@ -46,6 +57,10 @@ export async function updateSettings(_p: ActionState, fd: FormData): Promise<Act
     exchangeRateUsdUyu: g("exchangeRateUsdUyu"),
     defaultMarginPct: g("defaultMarginPct"),
     encargueLeadTimeDays: g("encargueLeadTimeDays"),
+    franchiseTaxPct: g("franchiseTaxPct"),
+    franchisePostalFeeUsd: g("franchisePostalFeeUsd"),
+    standardTaxPct: g("standardTaxPct"),
+    standardPostalFeeUsd: g("standardPostalFeeUsd"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
 

@@ -36,18 +36,27 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
   });
   if (!order) notFound();
 
-  const [suppliers, productos] = await Promise.all([
+  const [suppliers, productos, settings] = await Promise.all([
     prisma.supplier.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.product.findMany({
       orderBy: [{ brand: { name: "asc" } }, { name: "asc" }],
       select: { id: true, name: true, brand: { select: { name: true } } },
     }),
+    prisma.storeSettings.findUnique({ where: { id: "default" } }),
   ]);
+
+  const franchise = {
+    franchiseTaxPct: settings ? Number(settings.franchiseTaxPct) : 22,
+    franchisePostalFeeUsd: settings ? Number(settings.franchisePostalFeeUsd) : 2.6,
+    standardTaxPct: settings ? Number(settings.standardTaxPct) : 60,
+    standardPostalFeeUsd: settings ? Number(settings.standardPostalFeeUsd) : 4.5,
+  };
 
   const s = summarizeOrder(order);
   const rate = Number(order.exchangeRate);
   const pesoTotal = s.pesoTotalG;
   const opciones = productos.map((p) => ({ id: p.id, name: `${p.brand.name} — ${p.name}` }));
+  const c = s.customs;
 
   return (
     <>
@@ -62,10 +71,47 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
       {/* ---------- Resumen ---------- */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Productos" value={usd(s.productosUsd)} />
-        <Stat label="Envío + impuestos" value={usd(s.extrasUsd)} />
+        <Stat label="Envío + aduana + gastos" value={usd(s.extrasUsd)} />
         <Stat label="Total del pedido" value={usd(s.totalUsd)} />
         <Stat label="Peso total" value={`${(pesoTotal / 1000).toFixed(2)} kg`} />
       </div>
+
+      {/* ---------- Aduana ---------- */}
+      <Card className="mt-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-ink">Aduana (Correo Uruguayo)</h2>
+          <Badge tone={order.usesFranchise ? "ok" : "warn"}>
+            {order.usesFranchise ? "Con franquicia" : "Sin franquicia"}
+          </Badge>
+        </div>
+
+        <p className="mt-1.5 text-sm text-muted">
+          Impuesto del <strong>{Number(order.taxRatePct)}%</strong> sobre{" "}
+          {order.customsBaseUsd != null
+            ? `una base fija de ${usd(c.baseUsd)}`
+            : `el costo de los productos (${usd(c.baseUsd)})`}
+          .
+        </p>
+
+        <dl className="mt-5 max-w-md space-y-2 text-sm">
+          <Linea label="Impuesto (IVA o Tributos)" value={usd(c.taxUsd)} />
+          <Linea label="Servicio de Correo Uruguayo" value={usd(c.postalFeeUsd)} />
+          <Linea label="Costo de Almacenamiento" value={usd(c.storageUsd)} />
+          <Linea label="Saldo a favor" value={c.creditUsd > 0 ? `− ${usd(c.creditUsd)}` : usd(0)} />
+          <div className="flex justify-between border-t border-line pt-2.5 font-semibold text-ink">
+            <dt>Total</dt>
+            <dd className="tabular-nums">{usd(c.totalUsd)}</dd>
+          </div>
+        </dl>
+
+        {!order.usesFranchise && (
+          <p className="mt-4 text-xs text-amber-400">
+            ⚠ Sin franquicia pagás {franchise.standardTaxPct}% en vez de {franchise.franchiseTaxPct}%.
+            Con esta base te habrías ahorrado{" "}
+            {usd(((franchise.standardTaxPct - franchise.franchiseTaxPct) / 100) * c.baseUsd)}.
+          </p>
+        )}
+      </Card>
 
       {/* ---------- Productos del pedido ---------- */}
       <Card className="mt-6 space-y-5">
@@ -171,6 +217,7 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
       <OrderForm
         action={updateImportOrder.bind(null, order.id)}
         suppliers={suppliers}
+        franchise={franchise}
         submitLabel="Guardar cambios"
         defaults={{
           code: order.code,
@@ -178,12 +225,26 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
           supplierId: order.supplierId,
           status: order.status,
           shippingCostUsd: Number(order.shippingCostUsd),
-          taxesUsd: Number(order.taxesUsd),
           otherCostsUsd: Number(order.otherCostsUsd),
           exchangeRate: rate,
+          usesFranchise: order.usesFranchise,
+          taxRatePct: Number(order.taxRatePct),
+          customsBaseUsd: order.customsBaseUsd != null ? Number(order.customsBaseUsd) : null,
+          postalFeeUsd: Number(order.postalFeeUsd),
+          storageUsd: Number(order.storageUsd),
+          creditUsd: Number(order.creditUsd),
           notes: order.notes,
         }}
       />
     </>
+  );
+}
+
+function Linea({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between">
+      <dt className="text-muted">{label}</dt>
+      <dd className="tabular-nums text-ink">{value}</dd>
+    </div>
   );
 }

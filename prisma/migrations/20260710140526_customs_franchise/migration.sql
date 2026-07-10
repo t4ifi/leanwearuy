@@ -1,0 +1,13 @@
+-- AlterTable
+ALTER TABLE "ImportOrder" ADD COLUMN     "creditUsd" DECIMAL(12,2) NOT NULL DEFAULT 0,
+ADD COLUMN     "customsBaseUsd" DECIMAL(12,2),
+ADD COLUMN     "postalFeeUsd" DECIMAL(12,2) NOT NULL DEFAULT 0,
+ADD COLUMN     "storageUsd" DECIMAL(12,2) NOT NULL DEFAULT 0,
+ADD COLUMN     "taxRatePct" DECIMAL(5,2) NOT NULL DEFAULT 22,
+ADD COLUMN     "usesFranchise" BOOLEAN NOT NULL DEFAULT true;
+
+-- AlterTable
+ALTER TABLE "StoreSettings" ADD COLUMN     "franchisePostalFeeUsd" DECIMAL(12,2) NOT NULL DEFAULT 2.60,
+ADD COLUMN     "franchiseTaxPct" DECIMAL(5,2) NOT NULL DEFAULT 22,
+ADD COLUMN     "standardPostalFeeUsd" DECIMAL(12,2) NOT NULL DEFAULT 4.50,
+ADD COLUMN     "standardTaxPct" DECIMAL(5,2) NOT NULL DEFAULT 60;

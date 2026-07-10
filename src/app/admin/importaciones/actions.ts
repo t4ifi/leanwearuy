@@ -21,15 +21,29 @@ const num = (fallback = 0) =>
     return Number.isFinite(n) && n >= 0 ? n : fallback;
   });
 
+/** "" -> null; si hay número, se usa como base imponible fija. */
+const optNum = z
+  .string()
+  .transform((s) => (s.trim() === "" ? null : Number(s)))
+  .refine((v) => v === null || (Number.isFinite(v) && v >= 0), "Tiene que ser un número positivo");
+
 const orderSchema = z.object({
   code: z.string().trim().min(1, "Poné un código").max(40),
   orderDate: z.string().min(1),
   supplierId: z.string().transform((s) => (s === "" ? null : s)),
   status: z.enum(["DRAFT", "ORDERED", "SHIPPED", "RECEIVED", "CANCELLED"]),
   shippingCostUsd: num(),
-  taxesUsd: num(),
   otherCostsUsd: num(),
   exchangeRate: num(40).refine((v) => v > 0, "El tipo de cambio debe ser mayor a 0"),
+
+  // Aduana
+  usesFranchise: z.coerce.boolean(),
+  taxRatePct: num().refine((v) => v <= 200, "La tasa parece demasiado alta"),
+  customsBaseUsd: optNum,
+  postalFeeUsd: num(),
+  storageUsd: num(),
+  creditUsd: num(),
+
   notes: z.string().transform((s) => (s.trim() === "" ? null : s.trim())),
 });
 
@@ -41,9 +55,14 @@ function readOrder(fd: FormData) {
     supplierId: g("supplierId"),
     status: g("status"),
     shippingCostUsd: g("shippingCostUsd"),
-    taxesUsd: g("taxesUsd"),
     otherCostsUsd: g("otherCostsUsd"),
     exchangeRate: g("exchangeRate"),
+    usesFranchise: fd.get("usesFranchise") === "on",
+    taxRatePct: g("taxRatePct"),
+    customsBaseUsd: g("customsBaseUsd"),
+    postalFeeUsd: g("postalFeeUsd"),
+    storageUsd: g("storageUsd"),
+    creditUsd: g("creditUsd"),
     notes: g("notes"),
   };
 }
@@ -60,6 +79,9 @@ export async function createImportOrder(_p: ActionState, fd: FormData): Promise<
   const order = await prisma.importOrder.create({
     data: { ...d, orderDate: new Date(d.orderDate) },
   });
+
+  // Calcula el impuesto según la base (todavía sin productos: queda en 0).
+  await recalcImportOrder(order.id);
 
   revalidatePath("/admin/importaciones");
   redirect(`/admin/importaciones/${order.id}`);
@@ -80,7 +102,7 @@ export async function updateImportOrder(
     data: { ...d, orderDate: new Date(d.orderDate) },
   });
 
-  // Cambió el envío o los impuestos: hay que repartirlos de nuevo.
+  // Cambió el envío, la franquicia o los cargos: recalcular impuesto y prorrateo.
   await recalcImportOrder(id);
 
   revalidatePath(`/admin/importaciones/${id}`);

@@ -93,6 +93,43 @@ export default async function ConfiguracionPage() {
               </Field>
             </div>
           </div>
+
+          <div className="mt-5 rounded-xl border border-line-2 bg-panel-2/50 p-4">
+            <p className="text-sm font-medium text-ink">Aduana de Uruguay</p>
+            <p className="mb-4 mt-1 text-xs text-muted">
+              Valores que se aplican por defecto al crear un pedido. Se pueden ajustar en cada uno.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-4">
+              <Field label="Impuesto CON franquicia (%)">
+                <Input
+                  name="franchiseTaxPct"
+                  type="number" min="0" step="0.01" required
+                  defaultValue={settings ? Number(settings.franchiseTaxPct) : 22}
+                />
+              </Field>
+              <Field label="Correo CON franquicia (USD)">
+                <Input
+                  name="franchisePostalFeeUsd"
+                  type="number" min="0" step="0.01" required
+                  defaultValue={settings ? Number(settings.franchisePostalFeeUsd) : 2.6}
+                />
+              </Field>
+              <Field label="Impuesto SIN franquicia (%)">
+                <Input
+                  name="standardTaxPct"
+                  type="number" min="0" step="0.01" required
+                  defaultValue={settings ? Number(settings.standardTaxPct) : 60}
+                />
+              </Field>
+              <Field label="Correo SIN franquicia (USD)">
+                <Input
+                  name="standardPostalFeeUsd"
+                  type="number" min="0" step="0.01" required
+                  defaultValue={settings ? Number(settings.standardPostalFeeUsd) : 4.5}
+                />
+              </Field>
+            </div>
+          </div>
         </ActionForm>
       </Card>
 
