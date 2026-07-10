@@ -168,6 +168,26 @@ export async function addImportItem(orderId: string, _p: ActionState, fd: FormDa
   return {};
 }
 
+/**
+ * Fija el precio de venta de un producto (el sugerido, o el que se edite).
+ * Se usa desde la tabla del pedido, una vez que ya se sabe el costo real.
+ */
+export async function applyPrice(productId: string, orderId: string, priceUyu: number) {
+  await requireAdmin();
+
+  if (!Number.isFinite(priceUyu) || priceUyu <= 0) return { error: "Precio inválido." };
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { salePriceUyu: priceUyu },
+  });
+
+  revalidatePath(`/admin/importaciones/${orderId}`);
+  revalidatePath("/admin/productos");
+  revalidatePath("/"); // el catálogo público muestra el precio
+  return { ok: true };
+}
+
 export async function removeImportItem(itemId: string) {
   await requireAdmin();
   const item = await prisma.importItem.delete({ where: { id: itemId } });

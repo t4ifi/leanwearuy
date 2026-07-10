@@ -10,19 +10,28 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Badge, Card, PageHeader, Stat } from "@/components/ui";
 import { lineProfit, summarizeOrder } from "@/lib/imports";
+import { roundPriceUyu, suggestSalePriceUyu, usdToUyu } from "@/lib/costs";
 import { updateImportOrder } from "../actions";
 import { OrderForm } from "../order-form";
 import { AddItemForm } from "./add-item-form";
 import { RemoveItemButton } from "./remove-item-button";
 import { DeleteOrderButton } from "./delete-order-button";
+import { ApplyPriceButton } from "./apply-price-button";
 
 export const dynamic = "force-dynamic";
 
 const usd = (n: number) => "US$ " + n.toFixed(2);
 const uyu = (n: number) => "$ " + Math.round(n).toLocaleString("es-UY");
 
-export default async function PedidoPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PedidoPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ margen?: string }>;
+}) {
   const { id } = await params;
+  const { margen } = await searchParams;
 
   const order = await prisma.importOrder.findUnique({
     where: { id },
@@ -57,6 +66,10 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
   const pesoTotal = s.pesoTotalG;
   const opciones = productos.map((p) => ({ id: p.id, name: `${p.brand.name} — ${p.name}` }));
   const c = s.customs;
+
+  // Margen objetivo: el de Configuración, o el que se pida por la URL.
+  const margenDefault = settings ? Number(settings.defaultMarginPct) : 50;
+  const margenObjetivo = Math.min(Math.max(Number(margen ?? margenDefault) || margenDefault, 1), 95);
 
   return (
     <>
@@ -130,81 +143,148 @@ export default async function PedidoPage({ params }: { params: Promise<{ id: str
             Agregá productos para ver el cálculo del costo real.
           </p>
         ) : (
-          <div className="-mx-2 overflow-x-auto">
-            <table className="w-full min-w-4xl border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-line text-left text-xs font-medium uppercase tracking-wider text-faint">
-                  <th className="p-2">Producto</th>
-                  <th className="p-2 text-right">Cant.</th>
-                  <th className="p-2 text-right">Costo c/u</th>
-                  <th className="p-2 text-right">Peso</th>
-                  <th className="p-2 text-right">% peso</th>
-                  <th className="p-2 text-right">Envío asig.</th>
-                  <th className="p-2 text-right">Costo real c/u</th>
-                  <th className="p-2 text-right">Venta</th>
-                  <th className="p-2 text-right">Ganancia</th>
-                  <th className="p-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {order.items.map((it) => {
-                  const nombre = it.product?.name ?? it.name ?? "(sin nombre)";
-                  const lineWeight = it.unitWeightGrams * it.quantity;
-                  const share = pesoTotal > 0 ? (lineWeight / pesoTotal) * 100 : 0;
-                  const real = it.realCostUsd ? Number(it.realCostUsd) : null;
-                  const venta = it.product?.salePriceUyu ? Number(it.product.salePriceUyu) : null;
-                  const prof = lineProfit({ realCostUsd: real, salePriceUyu: venta, exchangeRate: rate });
+          <>
+            {/* Selector del margen con el que se calcula el precio ideal */}
+            <form className="flex flex-wrap items-center gap-3 rounded-lg border border-line-2 bg-panel-2/50 px-4 py-3">
+              <label htmlFor="margen" className="text-sm text-muted">
+                Precio ideal con un margen de
+              </label>
+              <input
+                id="margen"
+                name="margen"
+                type="number"
+                min="1"
+                max="95"
+                step="1"
+                defaultValue={margenObjetivo}
+                className="w-20 rounded-lg border border-line-2 bg-panel-2 px-2.5 py-1.5 text-sm tabular-nums text-ink outline-none focus:border-purple"
+              />
+              <span className="text-sm text-muted">%</span>
+              <button className="rounded-lg border border-line-2 px-3 py-1.5 text-xs text-muted transition hover:border-purple hover:text-ink">
+                Recalcular
+              </button>
+              <span className="text-xs text-faint">
+                Redondeado hacia arriba, terminando en 90.
+              </span>
+            </form>
 
-                  return (
-                    <tr key={it.id} className="border-b border-line/60 last:border-0">
-                      <td className="p-2">
-                        <span className="text-ink">{nombre}</span>
-                        {!it.product && (
-                          <span className="ml-2">
-                            <Badge>Fuera del catálogo</Badge>
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-2 text-right tabular-nums text-muted">{it.quantity}</td>
-                      <td className="p-2 text-right tabular-nums text-muted">{usd(Number(it.unitCostUsd))}</td>
-                      <td className="p-2 text-right tabular-nums text-muted">{lineWeight} g</td>
-                      <td className="p-2 text-right tabular-nums text-purple-2">{share.toFixed(1)}%</td>
-                      <td className="p-2 text-right tabular-nums text-muted">
-                        {it.allocatedShippingUsd ? usd(Number(it.allocatedShippingUsd)) : "—"}
-                      </td>
-                      <td className="p-2 text-right font-semibold tabular-nums text-ink">
-                        {real != null ? usd(real) : "—"}
-                      </td>
-                      <td className="p-2 text-right tabular-nums text-muted">
-                        {venta ? uyu(venta) : <span className="text-xs">—</span>}
-                      </td>
-                      <td className="p-2 text-right tabular-nums">
-                        {prof ? (
-                          <span className={prof.profitUyu >= 0 ? "text-stock" : "text-danger"}>
-                            {uyu(prof.profitUyu)}
-                            <span className="ml-1 text-xs opacity-70">({prof.marginPct}%)</span>
-                          </span>
-                        ) : (
-                          <span className="text-xs text-faint">—</span>
-                        )}
-                      </td>
-                      <td className="p-2 text-right">
-                        <RemoveItemButton itemId={it.id} name={nombre} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+            <div className="-mx-2 overflow-x-auto">
+              <table className="w-full min-w-5xl border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-line text-left text-xs font-medium uppercase tracking-wider text-faint">
+                    <th className="p-2">Producto</th>
+                    <th className="p-2 text-right">Cant.</th>
+                    <th className="p-2 text-right">Peso</th>
+                    <th className="p-2 text-right">Costo real c/u</th>
+                    <th className="p-2 text-right">Venta actual</th>
+                    <th className="p-2 text-right">Ganancia</th>
+                    <th className="p-2 text-right">Precio ideal</th>
+                    <th className="p-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items.map((it) => {
+                    const nombre = it.product?.name ?? it.name ?? "(sin nombre)";
+                    const lineWeight = it.unitWeightGrams * it.quantity;
+                    const share = pesoTotal > 0 ? (lineWeight / pesoTotal) * 100 : 0;
+                    const real = it.realCostUsd ? Number(it.realCostUsd) : null;
+                    const venta = it.product?.salePriceUyu ? Number(it.product.salePriceUyu) : null;
+                    const prof = lineProfit({ realCostUsd: real, salePriceUyu: venta, exchangeRate: rate });
 
-        {order.items.length > 0 && (
-          <p className="text-xs text-faint">
-            El <strong>costo real</strong> ya incluye el envío, los impuestos y los gastos prorrateados
-            por peso. La <strong>ganancia</strong> compara ese costo (convertido a pesos con el dólar{" "}
-            {rate}) contra el precio de venta. Los items fuera del catálogo no tienen precio de venta.
-          </p>
+                    const ideal =
+                      real != null
+                        ? roundPriceUyu(
+                            suggestSalePriceUyu({
+                              realCostUsd: real,
+                              exchangeRate: rate,
+                              targetMarginPct: margenObjetivo,
+                            }),
+                          )
+                        : null;
+
+                    const envio = Number(it.allocatedShippingUsd ?? 0);
+                    const imp = Number(it.allocatedTaxesUsd ?? 0) + Number(it.allocatedOtherUsd ?? 0);
+
+                    return (
+                      <tr key={it.id} className="border-b border-line/60 last:border-0">
+                        <td className="p-2">
+                          <span className="text-ink">{nombre}</span>
+                          {!it.product && (
+                            <span className="ml-2">
+                              <Badge>Fuera del catálogo</Badge>
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="p-2 text-right tabular-nums text-muted">{it.quantity}</td>
+
+                        <td className="p-2 text-right tabular-nums text-muted">
+                          {lineWeight} g
+                          <span className="block text-xs text-purple-2">{share.toFixed(1)}%</span>
+                        </td>
+
+                        <td className="p-2 text-right tabular-nums">
+                          <span className="font-semibold text-ink">
+                            {real != null ? usd(real) : "—"}
+                          </span>
+                          {real != null && (
+                            <span className="block text-xs text-faint">
+                              {usd(Number(it.unitCostUsd))} + {usd(envio)} envío + {usd(imp)} aduana
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="p-2 text-right tabular-nums text-muted">
+                          {venta ? uyu(venta) : <span className="text-xs">—</span>}
+                        </td>
+
+                        <td className="p-2 text-right tabular-nums">
+                          {prof ? (
+                            <span className={prof.profitUyu >= 0 ? "text-stock" : "text-danger"}>
+                              {uyu(prof.profitUyu)}
+                              <span className="ml-1 text-xs opacity-70">({prof.marginPct}%)</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-faint">—</span>
+                          )}
+                        </td>
+
+                        {/* Precio ideal + aplicar */}
+                        <td className="p-2 text-right">
+                          {ideal != null && it.product ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="font-semibold tabular-nums text-purple-2">
+                                {uyu(ideal)}
+                              </span>
+                              <ApplyPriceButton
+                                productId={it.product.id}
+                                orderId={order.id}
+                                price={ideal}
+                                current={venta}
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-xs text-faint">—</span>
+                          )}
+                        </td>
+
+                        <td className="p-2 text-right">
+                          <RemoveItemButton itemId={it.id} name={nombre} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="text-xs text-faint">
+              El <strong>costo real</strong> ya incluye el envío y la aduana, prorrateados por peso.
+              El <strong>precio ideal</strong> es el que te deja un {margenObjetivo}% de margen con el
+              dólar a {rate}: se calcula como costo ÷ (1 − {margenObjetivo}%). Los items fuera del
+              catálogo no tienen precio de venta.
+            </p>
+          </>
         )}
       </Card>
 

@@ -160,3 +160,22 @@ export function suggestSalePriceUyu(params: {
   const m = Math.min(Math.max(params.targetMarginPct, 0), 99.99) / 100;
   return money(costUyu / (1 - m));
 }
+
+/**
+ * Redondea el precio hacia arriba a un número "de góndola".
+ * Nunca redondea para abajo: eso te comería margen.
+ *   10374.40 -> 10390   (paso 10, terminación 90)
+ */
+export function roundPriceUyu(n: number, step = 10, ending = 90): number {
+  const arriba = Math.ceil(n / step) * step;
+  const resto = arriba % 100;
+  // Si ya termina en la cifra buscada o más, saltamos a la próxima centena.
+  return resto <= ending ? arriba - resto + ending : arriba - resto + 100 + ending;
+}
+
+/**
+ * El precio mínimo para no perder plata: cubre el costo real, sin ganancia.
+ */
+export function breakEvenUyu(realCostUsd: number, exchangeRate: number): number {
+  return usdToUyu(realCostUsd, exchangeRate);
+}
