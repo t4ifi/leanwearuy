@@ -14,9 +14,47 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guard";
 import { productSchema, formDataToProduct } from "@/lib/validation";
-import { uniqueSlug } from "@/lib/slug";
+import { uniqueSlug, slugify } from "@/lib/slug";
+import { NEW_BRAND, NEW_CAT } from "@/lib/product-form-constants";
 
 export type ActionState = { error?: string; fieldErrors?: Record<string, string> };
+
+/**
+ * Resuelve la marca: si se eligió "crear nueva", la crea (o reutiliza una
+ * existente con el mismo nombre) y devuelve su id.
+ */
+async function resolveBrandId(fd: FormData): Promise<{ id?: string; error?: string }> {
+  const raw = (fd.get("brandId") ?? "").toString();
+  if (raw !== NEW_BRAND) return { id: raw };
+
+  const name = (fd.get("brandNewName") ?? "").toString().trim();
+  if (!name) return { error: "Escribí el nombre de la marca nueva." };
+
+  const slug = slugify(name);
+  const existing = await prisma.brand.findFirst({ where: { OR: [{ name }, { slug }] } });
+  if (existing) return { id: existing.id };
+
+  const brand = await prisma.brand.create({ data: { name, slug } });
+  return { id: brand.id };
+}
+
+/** Igual que la marca, pero la categoría nueva necesita un grupo (padre). */
+async function resolveCategoryId(fd: FormData): Promise<{ id?: string; error?: string }> {
+  const raw = (fd.get("categoryId") ?? "").toString();
+  if (raw !== NEW_CAT) return { id: raw };
+
+  const name = (fd.get("catNewName") ?? "").toString().trim();
+  const groupId = (fd.get("catNewGroup") ?? "").toString();
+  if (!name) return { error: "Escribí el nombre de la categoría nueva." };
+  if (!groupId) return { error: "Elegí a qué grupo pertenece la categoría." };
+
+  const slug = slugify(name);
+  const existing = await prisma.category.findUnique({ where: { slug } });
+  if (existing) return { id: existing.id };
+
+  const cat = await prisma.category.create({ data: { name, slug, parentId: groupId } });
+  return { id: cat.id };
+}
 
 /** Convierte los errores de Zod en un mapa campo -> mensaje. */
 function toFieldErrors(issues: { path: PropertyKey[]; message: string }[]) {
@@ -59,7 +97,17 @@ export async function createProduct(
 ): Promise<ActionState> {
   await requireAdmin();
 
-  const parsed = productSchema.safeParse(formDataToProduct(formData));
+  // Resolver marca/categoría (pueden ser nuevas) antes de validar.
+  const brandRes = await resolveBrandId(formData);
+  if (brandRes.error) return { error: brandRes.error };
+  const catRes = await resolveCategoryId(formData);
+  if (catRes.error) return { error: catRes.error };
+
+  const raw = formDataToProduct(formData);
+  raw.brandId = brandRes.id ?? "";
+  raw.categoryId = catRes.id ?? "";
+
+  const parsed = productSchema.safeParse(raw);
   if (!parsed.success) {
     return { error: "Revisá los campos marcados.", fieldErrors: toFieldErrors(parsed.error.issues) };
   }
@@ -89,7 +137,16 @@ export async function updateProduct(
   const existing = await prisma.product.findUnique({ where: { id }, select: { id: true } });
   if (!existing) return { error: "El producto no existe." };
 
-  const parsed = productSchema.safeParse(formDataToProduct(formData));
+  const brandRes = await resolveBrandId(formData);
+  if (brandRes.error) return { error: brandRes.error };
+  const catRes = await resolveCategoryId(formData);
+  if (catRes.error) return { error: catRes.error };
+
+  const raw = formDataToProduct(formData);
+  raw.brandId = brandRes.id ?? "";
+  raw.categoryId = catRes.id ?? "";
+
+  const parsed = productSchema.safeParse(raw);
   if (!parsed.success) {
     return { error: "Revisá los campos marcados.", fieldErrors: toFieldErrors(parsed.error.issues) };
   }

@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button, Card, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
+import { NEW_BRAND, NEW_CAT } from "@/lib/product-form-constants";
+import { SizeSelector } from "./size-selector";
 import type { ActionState } from "./actions";
 
 export type Option = { id: string; name: string };
+export type CategoryOption = { id: string; name: string; group: string };
 
 export type ProductDefaults = {
   name?: string;
@@ -33,19 +36,31 @@ export function ProductForm({
   action,
   brands,
   categories,
+  groups,
   suppliers,
   defaults = {},
   submitLabel,
 }: {
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
   brands: Option[];
-  categories: Option[];
+  categories: CategoryOption[];
+  groups: Option[]; // categorías padre (Ropa, Calzado, Accesorios)
   suppliers: Option[];
   defaults?: ProductDefaults;
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, {});
   const err = (f: string) => state.fieldErrors?.[f];
+
+  const [brandId, setBrandId] = useState(defaults.brandId ?? "");
+  const [categoryId, setCategoryId] = useState(defaults.categoryId ?? "");
+  const [newCatGroupId, setNewCatGroupId] = useState(groups[0]?.id ?? "");
+
+  // Grupo (Ropa/Calzado/…) para elegir el set de talles.
+  const group =
+    categoryId === NEW_CAT
+      ? (groups.find((g) => g.id === newCatGroupId)?.name ?? null)
+      : (categories.find((c) => c.id === categoryId)?.group ?? null);
 
   return (
     <form action={formAction} className="space-y-5">
@@ -64,21 +79,30 @@ export function ProductForm({
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-3">
+          {/* Marca (con crear nueva) */}
           <Field label="Marca *" error={err("brandId")}>
-            <Select name="brandId" defaultValue={defaults.brandId} required>
+            <Select name="brandId" value={brandId} onChange={(e) => setBrandId(e.target.value)} required>
               <option value="">Elegir…</option>
               {brands.map((b) => (
                 <option key={b.id} value={b.id}>{b.name}</option>
               ))}
+              <option value={NEW_BRAND}>➕ Crear marca nueva…</option>
             </Select>
           </Field>
 
+          {/* Categoría (con crear nueva) */}
           <Field label="Categoría *" error={err("categoryId")}>
-            <Select name="categoryId" defaultValue={defaults.categoryId} required>
+            <Select
+              name="categoryId"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              required
+            >
               <option value="">Elegir…</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
+              <option value={NEW_CAT}>➕ Crear categoría nueva…</option>
             </Select>
           </Field>
 
@@ -90,18 +114,49 @@ export function ProductForm({
           </Field>
         </div>
 
+        {/* Campos de marca nueva */}
+        {brandId === NEW_BRAND && (
+          <div className="rounded-lg border border-purple/30 bg-purple/5 p-4">
+            <Field label="Nombre de la marca nueva *" error={err("brandNewName")}>
+              <Input name="brandNewName" placeholder="Ej: Stüssy" className="sm:max-w-sm" />
+            </Field>
+          </div>
+        )}
+
+        {/* Campos de categoría nueva */}
+        {categoryId === NEW_CAT && (
+          <div className="rounded-lg border border-purple/30 bg-purple/5 p-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Nombre de la categoría nueva *" error={err("catNewName")}>
+                <Input name="catNewName" placeholder="Ej: Shorts" />
+              </Field>
+              <Field label="Grupo *" hint="Define qué talles se muestran">
+                <Select
+                  name="catNewGroup"
+                  value={newCatGroupId}
+                  onChange={(e) => setNewCatGroupId(e.target.value)}
+                >
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+          </div>
+        )}
+
         <Field label="Descripción" error={err("description")}>
           <Textarea name="description" defaultValue={defaults.description ?? ""} />
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Talles" hint="Separados por coma. Ej: S, M, L, XL">
-            <Input name="sizes" defaultValue={defaults.sizes?.join(", ")} placeholder="S, M, L, XL" />
-          </Field>
-          <Field label="Colores" hint="Separados por coma">
-            <Input name="colors" defaultValue={defaults.colors?.join(", ")} placeholder="Negro, Gris" />
-          </Field>
-        </div>
+        {/* Talles con casillas */}
+        <Field label="Talles que se consiguen">
+          <SizeSelector group={group} initial={defaults.sizes ?? []} />
+        </Field>
+
+        <Field label="Colores" hint="Separados por coma">
+          <Input name="colors" defaultValue={defaults.colors?.join(", ")} placeholder="Negro, Gris" />
+        </Field>
 
         <div className="flex flex-wrap gap-6 pt-1">
           <Checkbox name="featured" label="Destacado" defaultChecked={defaults.featured} />
@@ -146,11 +201,7 @@ export function ProductForm({
             />
           </Field>
 
-          <Field
-            label="Peso (gramos)"
-            error={err("weightGrams")}
-            hint="Clave: define cuánto envío absorbe"
-          >
+          <Field label="Peso (gramos)" error={err("weightGrams")} hint="Clave: define cuánto envío absorbe">
             <Input
               name="weightGrams"
               type="number"
@@ -177,11 +228,7 @@ export function ProductForm({
             </Select>
           </Field>
 
-          <Field
-            label="Link del proveedor"
-            error={err("supplierUrl")}
-            hint="Kakobuy, Taobao, Weidian, Yupoo…"
-          >
+          <Field label="Link del proveedor" error={err("supplierUrl")} hint="Kakobuy, Taobao, Weidian, Yupoo…">
             <Input
               name="supplierUrl"
               type="url"
@@ -224,7 +271,7 @@ export function ProductForm({
         </Button>
         <Link
           href="/admin/productos"
-          className="rounded-xl border border-line-2 bg-panel-2 px-5 py-2.5 text-sm font-semibold text-muted transition hover:text-ink"
+          className="rounded-lg border border-line-2 px-5 py-2.5 text-sm font-medium text-muted transition hover:text-ink"
         >
           Cancelar
         </Link>

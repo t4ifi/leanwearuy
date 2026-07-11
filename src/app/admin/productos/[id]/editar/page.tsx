@@ -15,7 +15,7 @@ export default async function EditarProductoPage({
 }) {
   const { id } = await params;
 
-  const [producto, brands, categories, suppliers, settings] = await Promise.all([
+  const [producto, brands, cats, groups, suppliers, settings] = await Promise.all([
     prisma.product.findUnique({
       where: { id },
       include: {
@@ -32,6 +32,11 @@ export default async function EditarProductoPage({
     prisma.category.findMany({
       where: { parentId: { not: null } },
       orderBy: { name: "asc" },
+      select: { id: true, name: true, parent: { select: { name: true } } },
+    }),
+    prisma.category.findMany({
+      where: { parentId: null },
+      orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
     prisma.supplier.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
@@ -39,6 +44,8 @@ export default async function EditarProductoPage({
   ]);
 
   if (!producto) notFound();
+
+  const categories = cats.map((c) => ({ id: c.id, name: c.name, group: c.parent?.name ?? "Otros" }));
 
   // Costo real: el del último pedido (ya trae envío y aduana prorrateados).
   const item = producto.importItems[0];
@@ -86,6 +93,7 @@ export default async function EditarProductoPage({
         action={action}
         brands={brands}
         categories={categories}
+        groups={groups}
         suppliers={suppliers}
         submitLabel="Guardar cambios"
         defaults={{

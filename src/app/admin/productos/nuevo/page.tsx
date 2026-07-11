@@ -5,22 +5,28 @@ import { ProductForm } from "../product-form";
 
 export const dynamic = "force-dynamic";
 
-/** Trae las opciones de los selects. Solo categorías hoja (no los grupos). */
+/** Opciones de los selects: categorías hoja (con su grupo) y los grupos padre. */
 async function getOptions() {
-  const [brands, categories, suppliers] = await Promise.all([
+  const [brands, cats, groups, suppliers] = await Promise.all([
     prisma.brand.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.category.findMany({
       where: { parentId: { not: null } },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, parent: { select: { name: true } } },
+    }),
+    prisma.category.findMany({
+      where: { parentId: null },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
     prisma.supplier.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
-  return { brands, categories, suppliers };
+  const categories = cats.map((c) => ({ id: c.id, name: c.name, group: c.parent?.name ?? "Otros" }));
+  return { brands, categories, groups, suppliers };
 }
 
 export default async function NuevoProductoPage() {
-  const { brands, categories, suppliers } = await getOptions();
+  const { brands, categories, groups, suppliers } = await getOptions();
 
   return (
     <>
@@ -34,6 +40,7 @@ export default async function NuevoProductoPage() {
         action={createProduct}
         brands={brands}
         categories={categories}
+        groups={groups}
         suppliers={suppliers}
         submitLabel="Crear producto"
       />
