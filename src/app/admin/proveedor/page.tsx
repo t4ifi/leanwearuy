@@ -30,6 +30,7 @@ export default async function ProveedorPage({
         : undefined,
       include: {
         brand: { select: { name: true } },
+        category: { select: { parent: { select: { name: true } } } },
         supplier: { select: { name: true } },
         images: { where: { isPrimary: true }, take: 1, select: { url: true } },
       },
@@ -72,6 +73,7 @@ export default async function ProveedorPage({
                 id: p.id,
                 name: p.name,
                 brand: p.brand.name,
+                group: p.category.parent?.name ?? null,
                 image: p.images[0]?.url ?? null,
                 supplierId: p.supplierId,
                 supplierName: p.supplier?.name ?? null,

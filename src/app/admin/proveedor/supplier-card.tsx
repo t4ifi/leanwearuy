@@ -5,12 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { Field, Input, Select } from "@/components/ui";
 import { IconExternal, IconPencil } from "@/components/admin/icons";
+import { SizeSelector } from "../productos/size-selector";
 import { updateSupplierInfo, type SupplierState } from "./actions";
 
 export type SupplierProduct = {
   id: string;
   name: string;
   brand: string;
+  group: string | null; // Ropa / Calzado / … para las casillas de talles
   image: string | null;
   supplierId: string | null;
   supplierName: string | null;
@@ -87,8 +89,8 @@ export function SupplierCard({
               />
             </Field>
 
-            <Field label="Talles que se consiguen" hint="Separados por coma">
-              <Input name="sizes" defaultValue={product.sizes.join(", ")} placeholder="S, M, L, XL" />
+            <Field label="Talles que se consiguen">
+              <SizeSelector group={product.group} initial={product.sizes} />
             </Field>
 
             {state.error && <p className="text-sm text-danger">{state.error}</p>}
