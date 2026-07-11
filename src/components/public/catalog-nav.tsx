@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { SortSelect } from "./sort-select";
 
-export type Params = { cat?: string; marca?: string; q?: string; sort?: string; page?: string };
+export type Params = {
+  cat?: string;
+  marca?: string;
+  q?: string;
+  sort?: string;
+  page?: string;
+  tab?: string; // qué pestaña del sidebar se ve: "marcas" o (por defecto) categorías
+};
 
 /**
  * Arma un enlace conservando los filtros actuales y pisando los que se pasen.
@@ -72,15 +79,16 @@ export function Sidebar({
   grupos: { id: string; name: string; children: { slug: string; name: string; _count: { products: number } }[] }[];
   marcas: { slug: string; name: string; _count: { products: number } }[];
 }) {
-  const verMarcas = params.marca !== undefined;
+  // Se muestra la lista de marcas si estás en esa pestaña o si ya hay una marca filtrada.
+  const verMarcas = params.tab === "marcas" || !!params.marca;
 
   return (
     <aside className="sticky top-[7.5rem] max-h-[calc(100dvh-9rem)] overflow-y-auto rounded-2xl border border-line bg-panel-2/40 p-2">
       <div className="flex gap-1 px-2 pt-2">
-        <TabLink href={href(base, params, { marca: undefined })} active={!verMarcas}>
+        <TabLink href={href(base, params, { tab: undefined, marca: undefined })} active={!verMarcas}>
           Categorías
         </TabLink>
-        <TabLink href={href(base, params, { marca: params.marca ?? "" })} active={verMarcas}>
+        <TabLink href={href(base, params, { tab: "marcas" })} active={verMarcas}>
           Marcas
         </TabLink>
       </div>
