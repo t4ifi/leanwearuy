@@ -78,3 +78,17 @@ export const IconSearch = (p: P) => (
     <path d="m21 21-4.3-4.3" />
   </svg>
 );
+
+export const IconTag = (p: P) => (
+  <svg {...base} className={p.className}>
+    <path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z" />
+    <circle cx="7.5" cy="7.5" r="1.3" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+export const IconPencil = (p: P) => (
+  <svg {...base} className={p.className}>
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+);
