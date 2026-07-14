@@ -26,8 +26,14 @@ export function ImageManager({
     for (const f of Array.from(files)) fd.append("files", f);
 
     startTransition(async () => {
-      const res = await uploadImages(productId, fd);
-      if (res?.error) setError(res.error);
+      try {
+        const res = await uploadImages(productId, fd);
+        if (res?.error) setError(res.error);
+      } catch {
+        // Si el servidor rechaza el cuerpo (foto muy grande) la acción falla
+        // antes de correr: mostramos un mensaje en vez de romper la página.
+        setError("No se pudo subir la imagen. Suele ser porque pesa demasiado (máx. ~4 MB); probá con una más liviana.");
+      }
     });
   }
 
@@ -36,7 +42,7 @@ export function ImageManager({
       <div>
         <h2 className="font-semibold text-ink">Fotos</h2>
         <p className="mt-1 text-sm text-muted">
-          La <strong>principal</strong> es la que se ve en el catálogo. JPG, PNG, WEBP o AVIF, hasta 8 MB.
+          La <strong>principal</strong> es la que se ve en el catálogo. JPG, PNG, WEBP o AVIF, hasta 4 MB.
         </p>
       </div>
 

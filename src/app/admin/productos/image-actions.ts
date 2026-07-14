@@ -14,8 +14,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guard";
 import { uploadToR2, deleteFromR2 } from "@/lib/r2";
 
-const MAX_BYTES = 8 * 1024 * 1024; // 8 MB por foto
+const MAX_BYTES = 4 * 1024 * 1024; // 4 MB por foto (límite del servidor en Vercel ~4,5 MB)
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+const R2_VARS = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME", "R2_PUBLIC_URL"];
 
 /** De la URL pública deduce la "key" (ruta interna) del objeto en R2. */
 function keyFromUrl(url: string): string {
@@ -25,6 +26,15 @@ function keyFromUrl(url: string): string {
 
 export async function uploadImages(productId: string, formData: FormData) {
   await requireAdmin();
+
+  // Si faltan las credenciales de R2 (típico: no se cargaron en Vercel),
+  // avisamos claro en vez de reventar con un error genérico.
+  const faltan = R2_VARS.filter((k) => !process.env[k]);
+  if (faltan.length) {
+    return {
+      error: `Falta configurar el almacenamiento de imágenes (R2) en el servidor: ${faltan.join(", ")}. Agregá esas variables en Vercel y volvé a desplegar.`,
+    };
+  }
 
   const product = await prisma.product.findUnique({
     where: { id: productId },
@@ -43,14 +53,21 @@ export async function uploadImages(productId: string, formData: FormData) {
       return { error: `"${file.name}": formato no permitido (usá JPG, PNG, WEBP o AVIF).` };
     }
     if (file.size > MAX_BYTES) {
-      return { error: `"${file.name}": pesa más de 8 MB.` };
+      return {
+        error: `"${file.name}" pesa ${(file.size / 1024 / 1024).toFixed(1)} MB. El máximo es 4 MB — achicá la foto o subí una más liviana.`,
+      };
     }
 
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
     const key = `productos/${product.slug}/${randomUUID()}.${ext}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    const url = await uploadToR2(key, buffer);
+    let url: string;
+    try {
+      url = await uploadToR2(key, buffer);
+    } catch (e) {
+      return { error: `No se pudo subir "${file.name}" a R2: ${(e as Error).message}` };
+    }
 
     await prisma.productImage.create({
       data: {
