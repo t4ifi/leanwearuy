@@ -52,6 +52,14 @@ export default async function ComoComprarPage() {
             </ul>
           </Card>
 
+          <Card title="¿Dudas con el talle?">
+            <p className="text-muted">
+              Si no estás seguro de qué talle pedir, <strong className="text-ink">consultanos</strong>{" "}
+              por Instagram y te pasamos las <strong className="text-ink">medidas exactas</strong> de esa
+              prenda, para que compres sin problemas.
+            </p>
+          </Card>
+
           <div className="lg:col-span-2">
             <Card title="¿No encontrás lo que buscás?">
               <p className="text-muted">
