@@ -86,6 +86,15 @@ export const IconTag = (p: P) => (
   </svg>
 );
 
+export const IconReceipt = (p: P) => (
+  <svg {...base} className={p.className}>
+    <path d="M4 2v20l3-2 3 2 3-2 3 2 3-2V2l-3 2-3-2-3 2-3-2z" />
+    <path d="M8 8h8" />
+    <path d="M8 12h8" />
+    <path d="M8 16h5" />
+  </svg>
+);
+
 export const IconPencil = (p: P) => (
   <svg {...base} className={p.className}>
     <path d="M12 20h9" />

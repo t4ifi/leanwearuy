@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconBox, IconChart, IconHome, IconSettings, IconTag, IconTruck } from "./icons";
+import { IconBox, IconChart, IconHome, IconReceipt, IconSettings, IconTag, IconTruck } from "./icons";
 
 const NAV = [
   { href: "/admin", label: "Inicio", Icon: IconHome, exact: true },
   { href: "/admin/productos", label: "Productos", Icon: IconBox },
   { href: "/admin/proveedor", label: "Proveedor", Icon: IconTag },
   { href: "/admin/importaciones", label: "Importaciones", Icon: IconTruck },
+  { href: "/admin/ventas", label: "Ventas", Icon: IconReceipt },
   { href: "/admin/estadisticas", label: "Estadísticas", Icon: IconChart },
   { href: "/admin/configuracion", label: "Configuración", Icon: IconSettings },
 ];
